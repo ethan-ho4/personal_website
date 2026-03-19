@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 
-export function Skills() {
+export function SkillsPage() {
   const skillCategories = [
     {
       category: 'Frontend',
@@ -41,20 +41,19 @@ export function Skills() {
   ];
 
   return (
-    <section id="skills" className="min-h-screen flex items-center justify-center py-20 px-6 dark:bg-gray-950 transition-colors">
-      <div className="max-w-6xl w-full">
+    <div className="min-h-screen pt-24 pb-20 px-6">
+      <div className="max-w-6xl mx-auto">
         <motion.div 
           className="text-center mb-16"
           initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
           <p className="text-blue-600 font-medium mb-2">Skills & Expertise</p>
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-4">
             What I Do Best
-          </h2>
-          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+          </h1>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             A diverse skill set covering the full spectrum of modern web development
           </p>
         </motion.div>
@@ -63,34 +62,31 @@ export function Skills() {
           {skillCategories.map((category, categoryIndex) => (
             <motion.div 
               key={categoryIndex} 
-              className="bg-white dark:bg-gray-900 p-8 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800"
+              className="bg-white p-8 rounded-xl shadow-sm border border-gray-100"
               initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: categoryIndex * 0.1 }}
             >
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">
                 {category.category}
-              </h3>
+              </h2>
               <div className="space-y-4">
                 {category.skills.map((skill, skillIndex) => (
                   <motion.div 
                     key={skillIndex}
                     initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true, margin: "-50px" }}
+                    animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.4, delay: categoryIndex * 0.1 + skillIndex * 0.05 }}
                   >
                     <div className="flex justify-between mb-2">
-                      <span className="text-gray-700 dark:text-gray-300 font-medium">{skill.name}</span>
-                      <span className="text-gray-500 dark:text-gray-400">{skill.level}%</span>
+                      <span className="text-gray-700 font-medium">{skill.name}</span>
+                      <span className="text-gray-500">{skill.level}%</span>
                     </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-2 overflow-hidden">
+                    <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                       <motion.div 
                         className="bg-blue-600 h-2 rounded-full"
                         initial={{ width: 0 }}
-                        whileInView={{ width: `${skill.level}%` }}
-                        viewport={{ once: true, margin: "-50px" }}
+                        animate={{ width: `${skill.level}%` }}
                         transition={{ duration: 1, delay: categoryIndex * 0.1 + skillIndex * 0.05 + 0.2, ease: "easeOut" }}
                       />
                     </div>
@@ -101,6 +97,6 @@ export function Skills() {
           ))}
         </div>
       </div>
-    </section>
+    </div>
   );
 }

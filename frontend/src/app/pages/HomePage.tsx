@@ -1,16 +1,12 @@
-import { Github, Linkedin, Mail, ArrowDown } from 'lucide-react';
-import { ImageWithFallback } from './figma/ImageWithFallback';
+import { Github, Linkedin, Mail, ArrowRight } from 'lucide-react';
+import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { motion } from 'motion/react';
+import { Link } from 'react-router';
 
-export function Hero() {
-  const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    element?.scrollIntoView({ behavior: 'smooth' });
-  };
-
+export function HomePage() {
   return (
-    <section id="hero" className="min-h-screen flex items-center justify-center pt-20 px-6 dark:bg-gray-950 transition-colors">
-      <div className="max-w-6xl w-full grid md:grid-cols-2 gap-12 items-center">
+    <div className="min-h-screen flex items-center justify-center pt-20 px-6 bg-gradient-to-br from-white via-blue-50 to-white dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 transition-colors">
+      <div className="max-w-7xl w-full grid md:grid-cols-2 gap-12 items-center py-12">
         <motion.div 
           className="space-y-6"
           initial={{ opacity: 0, x: -50 }}
@@ -27,7 +23,7 @@ export function Hero() {
               Hello, I'm
             </motion.p>
             <motion.h1 
-              className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white"
+              className="text-5xl md:text-7xl font-bold text-gray-900 dark:text-white"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.6 }}
@@ -35,7 +31,7 @@ export function Hero() {
               Alex Chen
             </motion.h1>
             <motion.h2 
-              className="text-2xl md:text-3xl text-gray-600 dark:text-gray-300"
+              className="text-2xl md:text-4xl text-gray-600 dark:text-gray-300"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.6 }}
@@ -55,23 +51,24 @@ export function Hero() {
           </motion.p>
 
           <motion.div 
-            className="flex gap-4"
+            className="flex flex-wrap gap-4"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.6 }}
           >
-            <button 
-              onClick={() => scrollToSection('contact')}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            <Link
+              to="/projects"
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
             >
-              Get In Touch
-            </button>
-            <button 
-              onClick={() => scrollToSection('projects')}
+              View My Work
+              <ArrowRight size={20} />
+            </Link>
+            <Link
+              to="/about"
               className="px-6 py-3 border-2 border-gray-900 dark:border-gray-300 text-gray-900 dark:text-gray-300 rounded-lg hover:bg-gray-900 dark:hover:bg-gray-300 hover:text-white dark:hover:text-gray-950 transition-colors font-medium"
             >
-              View Work
-            </button>
+              Learn More
+            </Link>
           </motion.div>
 
           <motion.div 
@@ -123,16 +120,6 @@ export function Hero() {
           />
         </motion.div>
       </div>
-
-      <motion.button 
-        onClick={() => scrollToSection('about')}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 text-gray-400 hover:text-blue-600 transition-colors animate-bounce"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1, duration: 0.6 }}
-      >
-        <ArrowDown size={32} />
-      </motion.button>
-    </section>
+    </div>
   );
 }

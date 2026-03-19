@@ -1,5 +1,6 @@
 import { Github, Linkedin, Mail, Heart } from 'lucide-react';
 import { motion } from 'motion/react';
+import { Link } from 'react-router';
 
 export function Footer() {
   return (
@@ -26,21 +27,21 @@ export function Footer() {
           >
             <h4 className="font-semibold mb-4">Quick Links</h4>
             <div className="space-y-2">
-              <a href="#about" className="block text-gray-400 hover:text-white transition-colors">
+              <Link to="/about" className="block text-gray-400 hover:text-white transition-colors">
                 About
-              </a>
-              <a href="#skills" className="block text-gray-400 hover:text-white transition-colors">
+              </Link>
+              <Link to="/skills" className="block text-gray-400 hover:text-white transition-colors">
                 Skills
-              </a>
-              <a href="#experience" className="block text-gray-400 hover:text-white transition-colors">
+              </Link>
+              <Link to="/experience" className="block text-gray-400 hover:text-white transition-colors">
                 Experience
-              </a>
-              <a href="#projects" className="block text-gray-400 hover:text-white transition-colors">
+              </Link>
+              <Link to="/projects" className="block text-gray-400 hover:text-white transition-colors">
                 Projects
-              </a>
-              <a href="#contact" className="block text-gray-400 hover:text-white transition-colors">
+              </Link>
+              <Link to="/contact" className="block text-gray-400 hover:text-white transition-colors">
                 Contact
-              </a>
+              </Link>
             </div>
           </motion.div>
 

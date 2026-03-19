@@ -2,7 +2,7 @@ import { Mail, MapPin, Phone, Send } from 'lucide-react';
 import { useState, FormEvent } from 'react';
 import { motion } from 'motion/react';
 
-export function Contact() {
+export function ContactPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -11,7 +11,6 @@ export function Contact() {
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    // Handle form submission
     console.log('Form submitted:', formData);
     alert('Thank you for your message! I\'ll get back to you soon.');
     setFormData({ name: '', email: '', message: '' });
@@ -39,19 +38,18 @@ export function Contact() {
   ];
 
   return (
-    <section id="contact" className="min-h-screen flex items-center justify-center py-20 px-6 dark:bg-gray-950 transition-colors">
-      <div className="max-w-6xl w-full">
+    <div className="min-h-screen pt-24 pb-20 px-6 dark:bg-gray-950 transition-colors">
+      <div className="max-w-6xl mx-auto">
         <motion.div 
           className="text-center mb-16"
           initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
           <p className="text-blue-600 font-medium mb-2">Get In Touch</p>
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-4">
             Let's Work Together
-          </h2>
+          </h1>
           <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
             Have a project in mind? I'd love to hear about it. Send me a message and 
             let's create something amazing together.
@@ -62,14 +60,13 @@ export function Contact() {
           <motion.div 
             className="space-y-8"
             initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
+            animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             <div>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
                 Contact Information
-              </h3>
+              </h2>
               <p className="text-gray-600 dark:text-gray-400 mb-8">
                 Feel free to reach out through any of these channels. I typically respond 
                 within 24 hours.
@@ -82,16 +79,14 @@ export function Contact() {
                   key={index} 
                   className="flex items-start gap-4"
                   initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true, margin: "-50px" }}
+                  animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.4, delay: 0.3 + index * 0.1 }}
                   whileHover={{ x: 5 }}
                 >
                   <motion.div 
                     className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0"
                     initial={{ scale: 0, rotate: -180 }}
-                    whileInView={{ scale: 1, rotate: 0 }}
-                    viewport={{ once: true }}
+                    animate={{ scale: 1, rotate: 0 }}
                     transition={{ duration: 0.5, delay: 0.3 + index * 0.1 }}
                   >
                     <item.icon className="text-blue-600 dark:text-blue-400" size={24} />
@@ -118,14 +113,12 @@ export function Contact() {
             onSubmit={handleSubmit} 
             className="space-y-6"
             initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
+            animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
           >
             <motion.div
               initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.4 }}
             >
               <label htmlFor="name" className="block text-gray-700 dark:text-gray-300 font-medium mb-2">
@@ -144,8 +137,7 @@ export function Contact() {
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.5 }}
             >
               <label htmlFor="email" className="block text-gray-700 dark:text-gray-300 font-medium mb-2">
@@ -164,8 +156,7 @@ export function Contact() {
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.6 }}
             >
               <label htmlFor="message" className="block text-gray-700 dark:text-gray-300 font-medium mb-2">
@@ -186,8 +177,7 @@ export function Contact() {
               type="submit"
               className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2"
               initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.7 }}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -198,6 +188,6 @@ export function Contact() {
           </motion.form>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
