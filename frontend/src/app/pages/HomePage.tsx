@@ -1,12 +1,16 @@
-import { Github, Linkedin, Mail, ArrowRight } from 'lucide-react';
+import { Github, Linkedin, Mail, ArrowRight, FileText } from 'lucide-react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { motion } from 'motion/react';
 import { Link } from 'react-router';
+import { useContent } from '../context/ContentContext';
+import { BackgroundOrbs } from '../components/BackgroundOrbs';
 
 export function HomePage() {
+  const { content } = useContent();
   return (
-    <div className="min-h-screen flex items-center justify-center pt-20 px-6 bg-gradient-to-br from-white via-blue-50 to-white dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 transition-colors">
-      <div className="max-w-7xl w-full grid md:grid-cols-2 gap-12 items-center py-12">
+    <div className="relative min-h-screen flex items-center justify-center pt-20 px-6 bg-gray-50 dark:bg-gray-950 transition-colors overflow-hidden">
+      <BackgroundOrbs />
+      <div className="relative z-10 max-w-7xl w-full grid md:grid-cols-2 gap-12 items-center py-12">
         <motion.div 
           className="space-y-6"
           initial={{ opacity: 0, x: -50 }}
@@ -28,7 +32,7 @@ export function HomePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.6 }}
             >
-              Alex Chen
+              Ethan Ho
             </motion.h1>
             <motion.h2 
               className="text-2xl md:text-4xl text-gray-600 dark:text-gray-300"
@@ -72,20 +76,26 @@ export function HomePage() {
           </motion.div>
 
           <motion.div 
-            className="flex gap-4 pt-4"
+            className="flex flex-wrap items-center gap-4 pt-4"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7, duration: 0.6 }}
           >
-            <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-gray-600 dark:text-gray-400 hover:text-blue-600 transition-colors">
+            <a href={content?.socials.github} target="_blank" rel="noopener noreferrer" className="text-gray-600 dark:text-gray-400 hover:text-blue-600 transition-colors">
               <Github size={24} />
             </a>
-            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-gray-600 dark:text-gray-400 hover:text-blue-600 transition-colors">
+            <a href={content?.socials.linkedin} target="_blank" rel="noopener noreferrer" className="text-gray-600 dark:text-gray-400 hover:text-blue-600 transition-colors">
               <Linkedin size={24} />
             </a>
-            <a href="mailto:alex@example.com" className="text-gray-600 dark:text-gray-400 hover:text-blue-600 transition-colors">
+            <a href={`mailto:${content?.contact.email}`} className="text-gray-600 dark:text-gray-400 hover:text-blue-600 transition-colors">
               <Mail size={24} />
             </a>
+            {content?.socials?.resume && (
+              <a href={content.socials.resume} target="_blank" rel="noopener noreferrer" className="ml-2 flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 rounded-full transition-colors">
+                <FileText size={18} />
+                View Resume
+              </a>
+            )}
           </motion.div>
         </motion.div>
 
@@ -102,7 +112,7 @@ export function HomePage() {
           >
             <ImageWithFallback 
               src="https://images.unsplash.com/photo-1613759612065-d5971d32ca49?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBwb3J0cmFpdCUyMHdvcmtzcGFjZXxlbnwxfHx8fDE3NzI5MzUxMDN8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
-              alt="Alex Chen"
+              alt="Ethan Ho"
               className="w-full h-full object-cover"
             />
           </motion.div>

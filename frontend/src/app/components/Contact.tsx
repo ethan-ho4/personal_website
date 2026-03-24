@@ -1,39 +1,74 @@
-import { Mail, MapPin, Phone, Send } from 'lucide-react';
+import { Mail, MapPin, Phone, Send, Download } from 'lucide-react';
 import { useState, FormEvent } from 'react';
 import { motion } from 'motion/react';
+import { useContent } from '../context/ContentContext';
 
 export function Contact() {
+  const { content, loading } = useContent();
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     message: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    // Handle form submission
-    console.log('Form submitted:', formData);
-    alert('Thank you for your message! I\'ll get back to you soon.');
-    setFormData({ name: '', email: '', message: '' });
+    setIsSubmitting(true);
+    setSubmitStatus('idle');
+    setErrorMessage('');
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send message');
+      }
+
+      setSubmitStatus('success');
+      setFormData({ name: '', email: '', message: '' });
+      setTimeout(() => setSubmitStatus('idle'), 5000);
+    } catch (error: any) {
+      console.error('Error submitting form:', error);
+      setSubmitStatus('error');
+      setErrorMessage(error.message || 'Something went wrong. Please try again later.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  if (loading || !content) return <div className="min-h-screen bg-gray-50 dark:bg-gray-900" />;
+
+  const { title, subtitle, email, phone, location } = content.contact;
 
   const contactInfo = [
     {
       icon: Mail,
       label: 'Email',
-      value: 'alex@example.com',
-      link: 'mailto:alex@example.com'
+      value: email,
+      link: `mailto:${email}`
     },
     {
       icon: Phone,
       label: 'Phone',
-      value: '+1 (555) 123-4567',
-      link: 'tel:+15551234567'
+      value: phone,
+      link: `tel:${phone}`
     },
     {
       icon: MapPin,
       label: 'Location',
-      value: 'San Francisco, CA',
+      value: location,
       link: null
     }
   ];
@@ -50,11 +85,10 @@ export function Contact() {
         >
           <p className="text-blue-600 font-medium mb-2">Get In Touch</p>
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-            Let's Work Together
+            {title}
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Have a project in mind? I'd love to hear about it. Send me a message and 
-            let's create something amazing together.
+            {subtitle}
           </p>
         </motion.div>
 
@@ -112,6 +146,27 @@ export function Contact() {
                 </motion.div>
               ))}
             </div>
+
+            {content?.socials?.resume && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: 0.6 }}
+                className="pt-6 mt-4 border-t border-gray-100 dark:border-gray-900"
+              >
+                <a
+                  href={content.socials.resume}
+                  download="Resume.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-4 bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all font-medium w-full border border-gray-200 dark:border-gray-800 group"
+                >
+                  <Download size={20} className="text-blue-600 dark:text-blue-400 group-hover:-translate-y-1 transition-transform" />
+                  <span>Download My Resume</span>
+                </a>
+              </motion.div>
+            )}
           </motion.div>
 
           <motion.form 
@@ -182,18 +237,37 @@ export function Contact() {
               />
             </motion.div>
 
+            {submitStatus === 'success' && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                className="p-4 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg text-sm border border-green-200 dark:border-green-800"
+              >
+                Thank you for your message! I'll get back to you soon.
+              </motion.div>
+            )}
+            
+            {submitStatus === 'error' && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                className="p-4 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg text-sm border border-red-200 dark:border-red-800"
+              >
+                {errorMessage}
+              </motion.div>
+            )}
+
             <motion.button
               type="submit"
-              className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2"
+              disabled={isSubmitting}
+              className={`w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: 0.7 }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={!isSubmitting ? { scale: 1.02 } : undefined}
+              whileTap={!isSubmitting ? { scale: 0.98 } : undefined}
             >
-              <span>Send Message</span>
-              <Send size={20} />
+              <span>{isSubmitting ? 'Sending...' : 'Send Message'}</span>
+              <Send size={20} className={isSubmitting ? 'animate-pulse' : ''} />
             </motion.button>
           </motion.form>
         </div>

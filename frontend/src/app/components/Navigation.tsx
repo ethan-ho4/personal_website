@@ -26,10 +26,12 @@ function ThemeToggle() {
 }
 import { Link, useLocation } from 'react-router';
 import { motion } from 'motion/react';
+import { useContent } from '../context/ContentContext';
 
 export function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const { content } = useContent();
 
   const navLinks = [
     { path: '/', label: 'Home' },
@@ -56,7 +58,7 @@ export function Navigation() {
             to="/"
             className="text-xl font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
           >
-            Alex Chen
+            Ethan Ho
           </Link>
 
           {/* Desktop Navigation */}
@@ -80,12 +82,24 @@ export function Navigation() {
                 )}
               </Link>
             ))}
-            <Link
-              to="/contact"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Contact
-            </Link>
+            <div className="flex items-center gap-4">
+              {content?.socials?.resume && (
+                <a
+                  href={content.socials.resume}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 border-2 border-blue-600 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors font-medium hidden lg:block"
+                >
+                  Resume
+                </a>
+              )}
+              <Link
+                to="/contact"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors hidden md:block"
+              >
+                Contact
+              </Link>
+            </div>
             <ThemeToggle />
           </div>
 
@@ -123,10 +137,21 @@ export function Navigation() {
                 {link.label}
               </Link>
             ))}
+            {content?.socials?.resume && (
+              <a
+                href={content.socials.resume}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setIsMenuOpen(false)}
+                className="text-left py-2 transition-colors text-blue-600 dark:text-blue-400 font-medium"
+              >
+                Resume
+              </a>
+            )}
             <Link
               to="/contact"
               onClick={() => setIsMenuOpen(false)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-left"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-left mt-2"
             >
               Contact
             </Link>

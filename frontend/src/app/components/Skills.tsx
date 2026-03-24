@@ -1,44 +1,11 @@
 import { motion } from 'motion/react';
+import { useContent, SkillCategory } from '../context/ContentContext';
 
 export function Skills() {
-  const skillCategories = [
-    {
-      category: 'Frontend',
-      skills: [
-        { name: 'React', level: 90 },
-        { name: 'TypeScript', level: 85 },
-        { name: 'Tailwind CSS', level: 90 },
-        { name: 'Next.js', level: 80 },
-      ]
-    },
-    {
-      category: 'Backend',
-      skills: [
-        { name: 'Node.js', level: 85 },
-        { name: 'Python', level: 75 },
-        { name: 'PostgreSQL', level: 80 },
-        { name: 'MongoDB', level: 70 },
-      ]
-    },
-    {
-      category: 'Design',
-      skills: [
-        { name: 'Figma', level: 85 },
-        { name: 'UI/UX Design', level: 80 },
-        { name: 'Responsive Design', level: 90 },
-        { name: 'Prototyping', level: 75 },
-      ]
-    },
-    {
-      category: 'Tools',
-      skills: [
-        { name: 'Git', level: 90 },
-        { name: 'Docker', level: 75 },
-        { name: 'VS Code', level: 95 },
-        { name: 'Vercel', level: 85 },
-      ]
-    }
-  ];
+  const { content, loading } = useContent();
+
+  if (loading || !content) return <div className="min-h-screen bg-gray-50 dark:bg-gray-900" />;
+  const { title, subtitle, categories: skillCategories } = content.skills;
 
   return (
     <section id="skills" className="min-h-screen flex items-center justify-center py-20 px-6 dark:bg-gray-950 transition-colors">
@@ -52,15 +19,15 @@ export function Skills() {
         >
           <p className="text-blue-600 font-medium mb-2">Skills & Expertise</p>
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-            What I Do Best
+            {title}
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            A diverse skill set covering the full spectrum of modern web development
+            {subtitle}
           </p>
         </motion.div>
 
         <div className="grid md:grid-cols-2 gap-8">
-          {skillCategories.map((category, categoryIndex) => (
+          {skillCategories.map((category: SkillCategory, categoryIndex: number) => (
             <motion.div 
               key={categoryIndex} 
               className="bg-white dark:bg-gray-900 p-8 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800"
@@ -73,7 +40,7 @@ export function Skills() {
                 {category.category}
               </h3>
               <div className="space-y-4">
-                {category.skills.map((skill, skillIndex) => (
+                {category.skills.map((skill: {name: string, level: number}, skillIndex: number) => (
                   <motion.div 
                     key={skillIndex}
                     initial={{ opacity: 0, x: -20 }}

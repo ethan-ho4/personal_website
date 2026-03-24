@@ -1,8 +1,11 @@
 import { Github, Linkedin, Mail, ArrowDown } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { motion } from 'motion/react';
+import { useContent } from '../context/ContentContext';
 
 export function Hero() {
+  const { content, loading } = useContent();
+
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     element?.scrollIntoView({ behavior: 'smooth' });
@@ -32,7 +35,7 @@ export function Hero() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.6 }}
             >
-              Alex Chen
+              {loading ? "Loading..." : content?.hero.title || "Ethan Ho"}
             </motion.h1>
             <motion.h2 
               className="text-2xl md:text-3xl text-gray-600 dark:text-gray-300"
@@ -40,7 +43,7 @@ export function Hero() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.6 }}
             >
-              Full Stack Developer & Designer
+              {loading ? "..." : content?.hero.subtitle || "Full Stack Developer & Designer"}
             </motion.h2>
           </div>
 
@@ -50,8 +53,7 @@ export function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.6 }}
           >
-            I craft beautiful, functional digital experiences that make a difference. 
-            Passionate about clean code, intuitive design, and solving complex problems.
+            {loading ? "..." : content?.hero.description || "I craft beautiful, functional digital experiences that make a difference."}
           </motion.p>
 
           <motion.div 
@@ -80,13 +82,13 @@ export function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7, duration: 0.6 }}
           >
-            <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-gray-600 dark:text-gray-400 hover:text-blue-600 transition-colors">
+            <a href={content?.socials.github} target="_blank" rel="noopener noreferrer" className="text-gray-600 dark:text-gray-400 hover:text-blue-600 transition-colors">
               <Github size={24} />
             </a>
-            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-gray-600 dark:text-gray-400 hover:text-blue-600 transition-colors">
+            <a href={content?.socials.linkedin} target="_blank" rel="noopener noreferrer" className="text-gray-600 dark:text-gray-400 hover:text-blue-600 transition-colors">
               <Linkedin size={24} />
             </a>
-            <a href="mailto:alex@example.com" className="text-gray-600 dark:text-gray-400 hover:text-blue-600 transition-colors">
+            <a href={`mailto:${content?.contact.email}`} className="text-gray-600 dark:text-gray-400 hover:text-blue-600 transition-colors">
               <Mail size={24} />
             </a>
           </motion.div>
@@ -105,7 +107,7 @@ export function Hero() {
           >
             <ImageWithFallback 
               src="https://images.unsplash.com/photo-1613759612065-d5971d32ca49?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBwb3J0cmFpdCUyMHdvcmtzcGFjZXxlbnwxfHx8fDE3NzI5MzUxMDN8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
-              alt="Alex Chen"
+              alt="Ethan Ho"
               className="w-full h-full object-cover"
             />
           </motion.div>

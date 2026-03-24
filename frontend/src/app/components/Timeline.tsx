@@ -12,49 +12,9 @@ interface Experience {
   color: string;
 }
 
-const experiences: Experience[] = [
-  {
-    company: 'TechCorp Inc.',
-    position: 'Senior Full Stack Developer',
-    period: '2024 - Present',
-    year: 2024,
-    description: 'Leading development of cloud-based SaaS platform serving 100k+ users. Architected microservices infrastructure and mentored junior developers.',
-    achievements: [
-      'Reduced API response time by 60%',
-      'Implemented CI/CD pipeline',
-      'Led team of 5 developers'
-    ],
-    color: 'from-blue-500 to-cyan-500'
-  },
-  {
-    company: 'StartupXYZ',
-    position: 'Full Stack Developer',
-    period: '2023 - 2024',
-    year: 2023,
-    description: 'Built and scaled web applications from concept to production. Worked across the full stack using React, Node.js, and PostgreSQL.',
-    achievements: [
-      'Launched 3 major product features',
-      'Improved test coverage to 85%',
-      'Designed component library'
-    ],
-    color: 'from-purple-500 to-pink-500'
-  },
-  {
-    company: 'Digital Agency Co.',
-    position: 'Frontend Developer',
-    period: '2022 - 2023',
-    year: 2022,
-    description: 'Created responsive websites and web applications for diverse clients. Focused on performance optimization and user experience.',
-    achievements: [
-      'Delivered 20+ client projects',
-      'Achieved 95+ Lighthouse scores',
-      'Developed reusable templates'
-    ],
-    color: 'from-orange-500 to-red-500'
-  }
-];
+import { useContent, ExperienceItem, TimelineContent } from '../context/ContentContext';
 
-function YearMarker({ year, index, totalYears, scrollYProgress, hasExperience }: { year: number, index: number, totalYears: number, scrollYProgress: any, hasExperience: Experience | undefined }) {
+function YearMarker({ year, index, totalYears, scrollYProgress, hasExperience }: { year: number, index: number, totalYears: number, scrollYProgress: any, hasExperience: ExperienceItem | undefined }) {
   const position = (index / (totalYears - 1)) * 100;
   const yearProgress = 0.1 + (index / (totalYears - 1)) * 0.8;
   
@@ -83,7 +43,7 @@ function YearMarker({ year, index, totalYears, scrollYProgress, hasExperience }:
           style={{ opacity: opacityLabel, scale: scaleLabel }}
         >
           <div className={`px-4 py-2 rounded-lg text-base font-bold ${hasExperience ? `bg-gradient-to-r ${hasExperience.color} text-white shadow-lg` : 'bg-gray-200 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400'}`}>
-            {year}
+            January {year}
           </div>
         </motion.div>
 
@@ -126,9 +86,27 @@ function SubPoint({ month, distanceFraction, yearProgress, nextYearProgress, bas
   );
 }
 
-function AchievementItem({ achievement, index, yearProgress, scrollYProgress }: { achievement: string, index: number, yearProgress: number, scrollYProgress: any }) {
-  const opacity = useTransform(scrollYProgress, [yearProgress - 0.03, yearProgress + (index * 0.02)], [0, 1]);
-  const y = useTransform(scrollYProgress, [yearProgress - 0.03, yearProgress + (index * 0.02)], [30, 0]);
+function ExpMarkerPoint({ marker, scrollYProgress }: { marker: { label: string, progressFraction: number, progress: number }, scrollYProgress: any }) {
+  const position = marker.progressFraction * 100;
+  const opacityLabel = useTransform(scrollYProgress, [marker.progress - 0.1, marker.progress, marker.progress + 0.1], [0.1, 1, 0.1]);
+  
+  return (
+    <div className="absolute top-0 z-20" style={{ left: `${position}%` }}>
+      <div className="absolute w-4 h-4 rounded-full bg-blue-500 border-[3px] border-white dark:border-gray-900 -translate-y-1/2 -translate-x-1/2" />
+      <motion.div
+        className="absolute top-20 -translate-x-1/2 whitespace-nowrap text-sm font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded shadow-sm border border-blue-100 dark:border-blue-800"
+        style={{ opacity: opacityLabel }}
+      >
+        {marker.label}
+      </motion.div>
+    </div>
+  );
+}
+
+function AchievementItem({ achievement, index, startProgress, scrollYProgress }: { achievement: string, index: number, startProgress: number, scrollYProgress: any }) {
+  const itemStart = startProgress + 0.01 + (index * 0.01);
+  const opacity = useTransform(scrollYProgress, [itemStart - 0.02, itemStart], [0, 1]);
+  const y = useTransform(scrollYProgress, [itemStart - 0.02, itemStart], [20, 0]);
 
   return (
     <motion.div
@@ -140,27 +118,57 @@ function AchievementItem({ achievement, index, yearProgress, scrollYProgress }: 
   );
 }
 
-function ExperienceCard({ exp, index, years, scrollYProgress }: { exp: Experience, index: number, years: number[], scrollYProgress: any }) {
-  const yearIndex = years.indexOf(exp.year);
-  const yearProgress = 0.1 + (yearIndex / (years.length - 1)) * 0.8;
-  
-  // Year period is 0.8 / (length - 1). May is exactly 4/12 of the way to the next year dot.
-  const segmentLength = 0.8 / (years.length - 1);
-  const fadeOutThreshold = yearProgress + (segmentLength * (4 / 12));
-  
-  // Fade in sharply before point, hold full opacity, and fade out exactly as it hits the May sub-point.
-  const opacity = useTransform(scrollYProgress, [yearProgress - 0.02, yearProgress, fadeOutThreshold - 0.02, fadeOutThreshold], [0, 1, 1, 0]);
-  const y = useTransform(scrollYProgress, [yearProgress - 0.02, yearProgress, fadeOutThreshold - 0.02, fadeOutThreshold], [50, 0, 0, -50]);
-  const scale = useTransform(scrollYProgress, [yearProgress - 0.02, yearProgress, fadeOutThreshold - 0.02, fadeOutThreshold], [0.85, 1, 1, 0.85]);
-  const rotateX = useTransform(scrollYProgress, [yearProgress - 0.02, yearProgress, fadeOutThreshold - 0.02, fadeOutThreshold], [10, 0, 0, -10]);
+function ExperienceCard({ exp, index, years, scrollYProgress, totalCards }: { exp: ExperienceItem, index: number, years: number[], scrollYProgress: any, totalCards: number }) {
+  const startYearRange = years[0];
+  const endYearRange = years[years.length - 1];
 
-  const lineOpacity = useTransform(scrollYProgress, [yearProgress - 0.02, yearProgress, fadeOutThreshold - 0.02, fadeOutThreshold], [0, 1, 1, 0]);
-  const glowOpacity = useTransform(scrollYProgress, [yearProgress - 0.02, yearProgress, fadeOutThreshold - 0.02, fadeOutThreshold], [0, 0.5, 0.5, 0]);
+  const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  
+  // Calculate Start Anchor
+  const sYearVal = exp.startYear ? parseInt(exp.startYear as string) : (Number(exp.year) || startYearRange);
+  const sMonthIdx = MONTHS.indexOf(exp.startMonth as string) !== -1 ? MONTHS.indexOf(exp.startMonth as string) : 0;
+  const startAnchor = sYearVal + (sMonthIdx / 12);
+  
+  // Calculate End Anchor
+  let endAnchor = startAnchor + 0.5; // fallback
+  if (exp.isCurrent) {
+    const d = new Date();
+    endAnchor = d.getFullYear() + (d.getMonth() / 12);
+  } else if (exp.endYear) {
+    const eYearVal = parseInt(exp.endYear as string) || sYearVal;
+    const eMonthIdx = MONTHS.indexOf(exp.endMonth as string) !== -1 ? MONTHS.indexOf(exp.endMonth as string) : 11;
+    endAnchor = eYearVal + ((eMonthIdx + 1) / 12);
+  } else if (exp.period && exp.period.includes('-')) {
+    endAnchor = startAnchor + 1; // legacy fallback
+  }
+
+  const getProgress = (anchor: number) => {
+    const clamped = Math.max(startYearRange, Math.min(anchor, endYearRange));
+    const fraction = (clamped - startYearRange) / (endYearRange - startYearRange);
+    return 0.1 + (fraction * 0.8);
+  };
+
+  const startProgress = getProgress(startAnchor);
+  let endProgress = getProgress(endAnchor);
+  if (endProgress <= startProgress + 0.02) {
+      endProgress = startProgress + 0.05;
+  }
+
+  const opacity = useTransform(scrollYProgress, [startProgress - 0.02, startProgress, endProgress, endProgress + 0.02], [0, 1, 1, 0]);
+  const y = useTransform(scrollYProgress, [startProgress - 0.02, startProgress, endProgress, endProgress + 0.02], [50, 0, 0, -50]);
+  const scale = useTransform(scrollYProgress, [startProgress - 0.02, startProgress, endProgress, endProgress + 0.02], [0.95, 1, 1, 0.95]);
+  const rotateX = useTransform(scrollYProgress, [startProgress - 0.02, startProgress, endProgress, endProgress + 0.02], [5, 0, 0, -5]);
+
+  const lineOpacity = useTransform(scrollYProgress, [startProgress - 0.02, startProgress, endProgress, endProgress + 0.02], [0, 1, 1, 0]);
+  const glowOpacity = useTransform(scrollYProgress, [startProgress - 0.02, startProgress, endProgress, endProgress + 0.02], [0, 0.5, 0.5, 0]);
+  
+  // Stagger overlapping cards to prevent them directly occluding one another
+  const topOffset = 15 + (index * 2);
 
   return (
     <motion.div
-      className="absolute left-[50%] w-[90%] max-w-3xl top-[15%]"
-      style={{ opacity, y, scale, rotateX, transformPerspective: 1200, x: '-50%' }}
+      className="absolute left-[50%] w-[90%] max-w-3xl"
+      style={{ top: `${topOffset}%`, opacity, y, scale, rotateX, transformPerspective: 1200, x: '-50%' }}
     >
       <motion.div
         className="absolute left-1/2 -translate-x-1/2 w-0.5 bg-gradient-to-b from-gray-300 dark:from-white/50 to-transparent top-full"
@@ -190,7 +198,7 @@ function ExperienceCard({ exp, index, years, scrollYProgress }: { exp: Experienc
             <p className="text-gray-900 dark:text-white font-semibold mb-4 text-lg">Key Achievements:</p>
             <div className="grid md:grid-cols-3 gap-4">
               {exp.achievements.map((achievement, i) => (
-                <AchievementItem key={i} achievement={achievement} index={i} yearProgress={yearProgress} scrollYProgress={scrollYProgress} />
+                <AchievementItem key={i} achievement={achievement} index={i} startProgress={startProgress} scrollYProgress={scrollYProgress} />
               ))}
             </div>
           </div>
@@ -201,6 +209,12 @@ function ExperienceCard({ exp, index, years, scrollYProgress }: { exp: Experienc
 }
 
 export function Timeline() {
+  const { content, loading } = useContent();
+  if (loading || !content) return <div className="min-h-screen bg-gray-50 dark:bg-gray-900" />;
+  return <TimelineInner timelineContent={content.timeline} />;
+}
+
+function TimelineInner({ timelineContent }: { timelineContent: TimelineContent }) {
   const containerRef = useRef<HTMLElement>(null);
   const [showInstruction, setShowInstruction] = useState(true);
   
@@ -214,10 +228,46 @@ export function Timeline() {
     return () => clearTimeout(timer);
   }, []);
 
-  const startYear = 2021;
-  const endYear = 2027;
+  const { title, subtitle, experiences } = timelineContent;
+  
+  const allYears: number[] = [];
+  experiences.forEach(e => {
+    if (!isNaN(Number(e.year))) allYears.push(Number(e.year));
+    if (e.startYear && !isNaN(parseInt(e.startYear as string))) allYears.push(parseInt(e.startYear as string));
+    if (e.endYear && !isNaN(parseInt(e.endYear as string))) allYears.push(parseInt(e.endYear as string));
+    if (e.isCurrent) allYears.push(new Date().getFullYear());
+  });
+  
+  const minYear = allYears.length > 0 ? Math.min(Math.floor(Math.min(...allYears)), 2021) : 2021;
+  const maxYear = allYears.length > 0 ? Math.max(Math.ceil(Math.max(...allYears)), 2025) : 2025;
+  
+  const startYear = minYear - 1;
+  const endYear = maxYear + 1;
   const years = Array.from({ length: endYear - startYear + 1 }, (_, i) => startYear + i);
   const numExperiences = experiences.length;
+
+  const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  
+  const experienceMarkers: { label: string, progressFraction: number, progress: number }[] = [];
+  experiences.forEach(e => {
+     const sY = e.startYear ? parseInt(e.startYear as string) : (Number(e.year) || startYear);
+     const sM = MONTHS.indexOf(e.startMonth as string);
+     if (sM > 0) { // Don't plot Jan, already handled by YearMarker
+       const sAnchor = sY + (sM / 12);
+       const sFrac = (sAnchor - startYear) / (endYear - startYear);
+       experienceMarkers.push({ label: `${e.startMonth?.substring(0,3)} ${sY}`, progressFraction: sFrac, progress: 0.1 + sFrac * 0.8 });
+     }
+     
+     if (!e.isCurrent && e.endYear) {
+       const eM = MONTHS.indexOf(e.endMonth as string);
+       if (eM >= 0) { // eM could be 0 (Jan), it's fine to plot "Jan End"
+         const eY = parseInt(e.endYear as string) || sY;
+         const eAnchor = eY + ((eM + 1) / 12);
+         const eFrac = (eAnchor - startYear) / (endYear - startYear);
+         experienceMarkers.push({ label: `${e.endMonth?.substring(0,3)} ${eY}`, progressFraction: eFrac, progress: 0.1 + eFrac * 0.8 });
+       }
+     }
+  });
 
   const timelineWidthVw = 200;
   const timelineX = useTransform(
@@ -235,6 +285,8 @@ export function Timeline() {
   
   const progressBarWidth = useTransform(scrollYProgress, [0, 1], ['0%', '100%']);
   const timelineProgressWidth = useTransform(scrollYProgress, [0.1, 0.9], ['0%', '100%']);
+
+  const parallaxX = useTransform(scrollYProgress, [0, 1], ["0vw", "-100vw"]);
 
   // Link range slider directly to scrollProgress
   const [sliderValue, setSliderValue] = useState(0);
@@ -262,7 +314,7 @@ export function Timeline() {
     <section 
       ref={containerRef}
       id="experience" 
-      className="relative bg-gradient-to-br from-white via-blue-50 to-white dark:from-gray-950 dark:via-black dark:to-gray-900 transition-colors duration-500"
+      className="relative bg-gray-50 dark:bg-gray-950 transition-colors duration-500"
       style={{ height: `${(numExperiences + 2) * 100}vh` }}
     >
       <motion.div
@@ -286,13 +338,45 @@ export function Timeline() {
       </motion.div>
 
       <div className="sticky top-0 h-screen flex items-center justify-center overflow-hidden">
+        
+        {/* Parallax Background Orbs */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_200px,#bae6fd,transparent)] dark:bg-[radial-gradient(circle_800px_at_50%_200px,#1e3a8a,transparent)] opacity-60" />
+          
+          <motion.div style={{ x: parallaxX }} className="absolute inset-y-0 left-0 w-[200vw] h-full">
+            <motion.div 
+              animate={{ x: [0, 100, 0], y: [0, -100, 0] }}
+              transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute -top-[10%] left-[5vw] w-[500px] h-[500px] rounded-full bg-blue-400/60 dark:bg-blue-600/40 blur-[90px]"
+            />
+            
+            <motion.div 
+              animate={{ x: [0, -120, 0], y: [0, 80, 0] }}
+              transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute top-[40%] left-[80vw] w-[600px] h-[600px] rounded-full bg-purple-400/50 dark:bg-purple-800/40 blur-[90px]"
+            />
+            
+            <motion.div 
+              animate={{ scale: [1, 1.25, 1], opacity: [0.5, 0.9, 0.5] }}
+              transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute -bottom-[20%] left-[120vw] w-[700px] h-[700px] rounded-full bg-cyan-300/50 dark:bg-cyan-800/30 blur-[100px]"
+            />
+
+            <motion.div 
+              animate={{ x: [0, 80, 0], y: [0, 100, 0] }}
+              transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute top-[20%] left-[170vw] w-[600px] h-[600px] rounded-full bg-blue-300/60 dark:bg-blue-700/40 blur-[90px]"
+            />
+          </motion.div>
+        </div>
+
         <motion.div
           className="absolute top-24 left-0 right-0 text-center z-10 px-6"
           style={{ opacity: headerOpacity, y: headerY }}
         >
           <p className="text-blue-400 font-medium mb-2 text-lg">Career Journey</p>
-          <h2 className="text-5xl md:text-7xl font-bold text-gray-900 dark:text-white mb-4">Work Experience</h2>
-          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">2021 - 2027: Building the Future</p>
+          <h2 className="text-5xl md:text-7xl font-bold text-gray-900 dark:text-white mb-4">{title}</h2>
+          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">{subtitle}</p>
         </motion.div>
 
         <motion.div className="absolute bottom-[20%] left-0 flex items-center" style={{ x: timelineX, width: `${timelineWidthVw}vw` }}>
@@ -304,7 +388,7 @@ export function Timeline() {
             />
 
             {years.map((year, index) => {
-              const hasExperience = experiences.find(exp => exp.year === year);
+              const hasExperience = experiences.find((exp: ExperienceItem) => Math.floor(Number(exp.year)) === year);
               return (
                 <YearMarker 
                   key={year} 
@@ -316,16 +400,20 @@ export function Timeline() {
                 />
               );
             })}
+            {experienceMarkers.map((marker, i) => (
+              <ExpMarkerPoint key={`m-${i}`} marker={marker} scrollYProgress={scrollYProgress} />
+            ))}
           </div>
         </motion.div>
 
-        {experiences.map((exp, index) => (
+        {experiences.map((exp: ExperienceItem, index: number) => (
           <ExperienceCard 
             key={index}
             exp={exp}
             index={index}
             years={years}
             scrollYProgress={scrollYProgress}
+            totalCards={experiences.length}
           />
         ))}
 

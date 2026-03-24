@@ -42,7 +42,7 @@ export function Header() {
             onClick={() => scrollToSection('hero')}
             className="text-xl font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
           >
-            Alex Chen
+            Ethan Ho
           </button>
 
           {/* Desktop Navigation */}

@@ -1,29 +1,19 @@
 import { Code, Palette, Rocket, Users } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useContent } from '../context/ContentContext';
+
+const iconMap: Record<string, any> = { 
+  Code: Code, 
+  Palette: Palette, 
+  Rocket: Rocket, 
+  Users: Users 
+};
 
 export function About() {
-  const highlights = [
-    {
-      icon: Code,
-      title: 'Clean Code',
-      description: 'Writing maintainable, scalable code that stands the test of time'
-    },
-    {
-      icon: Palette,
-      title: 'Design Focus',
-      description: 'Creating beautiful interfaces with attention to every detail'
-    },
-    {
-      icon: Rocket,
-      title: 'Fast Delivery',
-      description: 'Shipping quality products on time, every time'
-    },
-    {
-      icon: Users,
-      title: 'Collaboration',
-      description: 'Working seamlessly with teams to achieve shared goals'
-    }
-  ];
+  const { content, loading } = useContent();
+  if (loading || !content) return <div className="min-h-screen bg-gray-50 dark:bg-gray-900" />;
+
+  const { title, description1, description2, stats, highlights } = content.about;
 
   return (
     <section id="about" className="min-h-screen flex items-center justify-center py-20 px-6 bg-gray-50 dark:bg-gray-900 transition-colors">
@@ -37,7 +27,7 @@ export function About() {
         >
           <p className="text-blue-600 font-medium mb-2">About Me</p>
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-            Who I Am
+            {title}
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
             A passionate developer with 5+ years of experience building web applications 
@@ -54,15 +44,10 @@ export function About() {
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
-              I'm a full-stack developer based in San Francisco, specializing in creating 
-              exceptional digital experiences. My journey in tech started with a curiosity 
-              about how things work, and it's evolved into a passion for building products 
-              that make a real impact.
+              {description1}
             </p>
             <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
-              When I'm not coding, you'll find me exploring new design trends, contributing 
-              to open-source projects, or enjoying a good cup of coffee while sketching out 
-              ideas for my next project.
+              {description2}
             </p>
           </motion.div>
 
@@ -73,27 +58,17 @@ export function About() {
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.6, delay: 0.3 }}
           >
-            <div className="flex justify-between py-2">
-              <span className="text-gray-700 dark:text-gray-400">Experience</span>
-              <span className="font-semibold text-gray-900 dark:text-white">5+ Years</span>
-            </div>
-            <div className="flex justify-between py-2">
-              <span className="text-gray-700 dark:text-gray-400">Projects Completed</span>
-              <span className="font-semibold text-gray-900 dark:text-white">50+</span>
-            </div>
-            <div className="flex justify-between py-2">
-              <span className="text-gray-700 dark:text-gray-400">Happy Clients</span>
-              <span className="font-semibold text-gray-900 dark:text-white">30+</span>
-            </div>
-            <div className="flex justify-between py-2">
-              <span className="text-gray-700 dark:text-gray-400">Location</span>
-              <span className="font-semibold text-gray-900 dark:text-white">San Francisco, CA</span>
-            </div>
+            {stats.map((stat: { label: string; value: string }, i: number) => (
+              <div key={i} className="flex justify-between py-2">
+                <span className="text-gray-700 dark:text-gray-400">{stat.label}</span>
+                <span className="font-semibold text-gray-900 dark:text-white">{stat.value}</span>
+              </div>
+            ))}
           </motion.div>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {highlights.map((item, index) => (
+          {highlights.map((item: { icon: string; title: string; description: string }, index: number) => (
             <motion.div 
               key={index} 
               className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow"
@@ -110,7 +85,10 @@ export function About() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: index * 0.1 + 0.2 }}
               >
-                <item.icon className="text-blue-600" size={24} />
+                {(() => {
+                  const Icon = iconMap[item.icon] || Code;
+                  return <Icon className="text-blue-600" size={24} />;
+                })()}
               </motion.div>
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                 {item.title}

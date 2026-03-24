@@ -20,8 +20,8 @@ export function ContactPage() {
     {
       icon: Mail,
       label: 'Email',
-      value: 'alex@example.com',
-      link: 'mailto:alex@example.com'
+      value: 'ethan@example.com',
+      link: 'mailto:ethan@example.com'
     },
     {
       icon: Phone,

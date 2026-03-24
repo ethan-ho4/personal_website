@@ -1,5 +1,6 @@
 import { Code, Palette, Rocket, Users } from 'lucide-react';
 import { motion } from 'motion/react';
+import { BackgroundOrbs } from '../components/BackgroundOrbs';
 
 export function AboutPage() {
   const highlights = [
@@ -26,8 +27,9 @@ export function AboutPage() {
   ];
 
   return (
-    <div className="min-h-screen pt-24 pb-20 px-6 bg-gray-50 dark:bg-gray-900 transition-colors">
-      <div className="max-w-6xl mx-auto">
+    <div className="relative min-h-screen pt-24 pb-20 px-6 bg-gray-50 dark:bg-gray-950 transition-colors overflow-hidden">
+      <BackgroundOrbs />
+      <div className="relative z-10 max-w-6xl mx-auto">
         <motion.div 
           className="text-center mb-16"
           initial={{ opacity: 0, y: 30 }}
