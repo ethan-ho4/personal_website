@@ -1,0 +1,40 @@
+Ethan Ho
+e56ho@uwaterloo.ca 647 614 5868 ethanho4 ethanho4 
+Education
+University of Waterloo 05/2027
+BASc in Mechanical Engineering- Business, Entrepreneurship and Technology Minor
+Skills
+Languages and Tools
+Python, C++, Java, JavaScript, TypeScript, SQL, Docker, Git, Figma
+Frameworks and Libraries
+Langchain, Folium, PyTorch, TensorFlow, React.js, Spring Boot, JMeter
+Professional Experience
+AI Engineer, Environics Analytics 09/2025 – 12/2025 | Toronto
+•Orchestrated a RAG-based AI system using LangChain and k-NN vector search, integrating high-dimensional 
+embeddings to deliver high-precision semantic discovery and automated data recommendations.
+•Developed AI agents for keyword and entity search to retrieve and rank datasets for internal and client use
+•Built interactive geospatial maps with Folium to visualize and explore company datasets
+•Boosted model accuracy by 50% through EDA and the development of optimized Snowflake predictive models
+AI Undergraduate Student Researcher, University of Waterloo 04/2025 – 07/2025 | Waterloo
+•Developed a graph neural network (GNN) to predict patent application success rates from historical data
+Undergraduate Student Researcher, 
+National Tsing Hua University, University of Washington MicroTech Lab09/2024 – 02/2025 | HsinChu, Taiwan
+•Designed and prototyped a semi-automated wire insertion system in SolidWorks, enhancing clinical 
+precision over traditional catheterization
+•Engineered C++ and Arduino motor logic to drive precision actuation and ensure safe, intuitive operation by 
+non-specialists
+AI Software Engineer, Avalanche Computing 01/2024 – 04/2024 | Taipei, Taiwan
+•Built a multimodal AI pipeline on NVIDIA Jetson Nano, integrating Whisper and Mistral for real-time 
+voice–text interaction, showcased at the 2024 NVIDIA GTC Conference
+•Optimized edge deployment by compressing models and reducing latency, enabling real-time AI inference on 
+low-power devices
+Fullstack Engineer, Rawstone 05/2023 – 08/2023 | Taipei, Taiwan
+•Developed responsive web interfaces with Angular.js, streamlining customer sign-up and authentication 
+workflows
+•Created RESTful APIs using Java and Spring Boot, ensuring seamless frontend–backend integration and 
+efficient database operations
+•Conducted performance testing with JMeter, simulating multi-user logins to diagnose bottlenecks and enhance 
+system reliability
+DevOps Software Engineer, The Cooperators 09/2022 – 12/2022 | Waterloo, Canada
+•Automated internal audits by developing Python scripts that interfaced with APIs for data retrieval and 
+transformation, boosting efficiency by 11×

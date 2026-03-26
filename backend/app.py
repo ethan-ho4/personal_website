@@ -5,6 +5,8 @@ from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 import smtplib
 from email.message import EmailMessage
+import PyPDF2
+from huggingface_hub import InferenceClient
 
 load_dotenv()
 
@@ -78,6 +80,88 @@ def update_content():
     
     save_content(data)
     return jsonify({"message": "Content updated successfully"}), 200
+
+@app.route('/api/upload-resume', methods=['POST'])
+def upload_resume():
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    token = auth_header.split(' ')[1]
+    if token not in SESSION_TOKENS:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part in the request"}), 400
+        
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+        
+    if file:
+        try:
+            reader = PyPDF2.PdfReader(file)
+            resume_text = "\n".join(page.extract_text() for page in reader.pages)
+        except Exception as e:
+            return jsonify({"error": f"Failed to parse PDF: {str(e)}"}), 400
+            
+        hf_api_key = os.environ.get("HUGGING_FACE_API_KEY")
+        hf_model = os.environ.get("HUGGING_FACE_MODEL")
+        if not hf_api_key or not hf_model:
+            return jsonify({"error": "Hugging Face API key or model not configured"}), 500
+            
+        hf_api_key = hf_api_key.strip()
+        hf_model = hf_model.strip()
+
+        try:
+            client = InferenceClient(model=hf_model, token=hf_api_key)
+            prompt = f"""You are a JSON formatter.
+Given the following resume text, return a JSON object containing the updated fields for 'contact', 'about', 'home', 'skills', and 'timeline'. 
+IMPORTANT: You MUST rewrite any descriptions, professional experiences, and achievements into the FIRST-PERSON perspective using 'I', 'me', and 'my', pretending you are the owner of the resume talking on their personal portfolio website.
+The data structure MUST EXACTLY match the following template. Reply ONLY with the raw valid JSON, no markdown formatting blocks.
+
+Template:
+{{
+  "contact": {{ "email": "", "location": "", "phone": "", "subtitle": "Have a project in mind? I'd love to hear about it. Send me a message and let's create something amazing together.", "title": "Let's Work Together" }},
+  "about": {{ "description1": "", "description2": "", "highlights": [ {{"description": "", "icon": "", "title": ""}} ], "stats": [ {{"label": "", "value": ""}} ], "title": "Who I Am" }},
+  "home": {{ "description": "", "subtitle": "", "title": "" }},
+  "skills": {{ "categories": [ {{"category": "Frontend", "skills": [ {{"level": 90, "name": ""}} ] }} ], "subtitle": "A diverse skill set covering the full spectrum of modern web development", "title": "What I Do Best" }},
+  "timeline": {{ "experiences": [ {{"achievements": [""], "color": "from-blue-500 to-cyan-500", "company": "", "description": "", "endMonth": "December", "endYear": "2024", "isCurrent": false, "period": "January 2022 - December 2024", "position": "", "startMonth": "January", "startYear": "2022", "year": 2022}} ], "subtitle": "Building the Future", "title": "Work Experience" }}
+}}
+
+Resume text:
+{resume_text}
+"""
+            response = client.chat_completion(
+                messages=[
+                    {"role": "system", "content": "You only output JSON. Do not output anything other than JSON."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=4000,
+                temperature=0.1
+            )
+            
+            generated_text = response.choices[0].message.content.strip()
+            if generated_text.startswith("```json"):
+                generated_text = generated_text[7:]
+            if generated_text.endswith("```"):
+                generated_text = generated_text[:-3]
+            generated_text = generated_text.strip()
+            
+            new_data = json.loads(generated_text)
+            
+            current_content = load_content()
+            for k in ["contact", "about", "home", "skills", "timeline"]:
+                if k in new_data:
+                    current_content[k] = new_data[k]
+                    
+            save_content(current_content)
+            return jsonify({"message": "Resume parsed and website content updated successfully!", "data": current_content}), 200
+
+        except json.JSONDecodeError as e:
+            return jsonify({"error": f"Failed to map AI response to JSON: {str(e)}", "raw_output": generated_text}), 500
+        except Exception as e:
+            return jsonify({"error": f"Failed to call InferenceClient: {str(e)}"}), 500
 
 @app.route('/api/contact', methods=['POST'])
 def handle_contact():

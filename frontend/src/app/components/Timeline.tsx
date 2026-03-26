@@ -1,469 +1,346 @@
-import { motion, useScroll, useTransform } from 'motion/react';
-import { useRef, useState, useEffect, ChangeEvent } from 'react';
-import { Briefcase, Calendar, ArrowDown, ArrowUp } from 'lucide-react';
-
-interface Experience {
-  company: string;
-  position: string;
-  period: string;
-  year: number;
-  description: string;
-  achievements: string[];
-  color: string;
-}
-
+import { motion, useScroll, useTransform, useMotionValue, useSpring } from 'motion/react';
+import { useRef, useState, useLayoutEffect } from 'react';
+import { Briefcase, Calendar, ChevronRight, Award, Zap, Sparkles, ArrowDown } from 'lucide-react';
 import { useContent, ExperienceItem, TimelineContent } from '../context/ContentContext';
 
-function YearMarker({ year, index, totalYears, scrollYProgress, hasExperience }: { year: number, index: number, totalYears: number, scrollYProgress: any, hasExperience: ExperienceItem | undefined }) {
-  const position = (index / (totalYears - 1)) * 100;
-  const yearProgress = 0.1 + (index / (totalYears - 1)) * 0.8;
-  
-  const scaleDot = useTransform(scrollYProgress, [yearProgress - 0.1, yearProgress, yearProgress + 0.1], [1, hasExperience ? 2 : 1.5, 1]);
-  const opacityDot = useTransform(scrollYProgress, [yearProgress - 0.05, yearProgress, yearProgress + 0.05], [0.3, 1, 0.3]);
-  const opacityLabel = useTransform(scrollYProgress, [yearProgress - 0.15, yearProgress - 0.05, yearProgress + 0.15], [0, 1, 0.5]);
-  const scaleLabel = useTransform(scrollYProgress, [yearProgress - 0.1, yearProgress], [0.8, 1]);
-  
-  const pulseScale = useTransform(scrollYProgress, [yearProgress - 0.05, yearProgress, yearProgress + 0.05], [0, 1, 0]);
-  const pulseOpacity = useTransform(scrollYProgress, [yearProgress - 0.05, yearProgress, yearProgress + 0.05], [0, 0.6, 0]);
+// Shooting Stars System triggered precisely by mid-scroll progress
+function ShootingStars({ scrollYProgress }: { scrollYProgress: any }) {
+  const opacity = useTransform(scrollYProgress, [0.15, 0.35, 0.85], [0, 1, 0]);
 
   return (
-    <div className="absolute top-1/2 w-full">
-      {/* Container for the Year marker at exactly `position` */}
-      <div className="absolute top-0" style={{ left: `${position}%` }}>
-        <motion.div className="absolute w-6 h-6 -translate-y-1/2 -translate-x-1/2" style={{ scale: scaleDot, transformOrigin: 'center' }}>
-          <div className={`absolute inset-0 rounded-full border-2 ${hasExperience ? 'border-gray-900 dark:border-white bg-white dark:bg-gray-900' : 'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800'}`} />
-          <motion.div
-            className={`absolute inset-0 rounded-full ${hasExperience ? `bg-gradient-to-br ${hasExperience.color}` : 'bg-gray-500'}`}
-            style={{ opacity: opacityDot }}
-          />
-        </motion.div>
-
+    <motion.div style={{ opacity }} className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+      {Array.from({ length: 30 }).map((_, i) => (
         <motion.div
-          className="absolute top-8 -translate-x-1/2 whitespace-nowrap"
-          style={{ opacity: opacityLabel, scale: scaleLabel }}
-        >
-          <div className={`px-4 py-2 rounded-lg text-base font-bold ${hasExperience ? `bg-gradient-to-r ${hasExperience.color} text-white shadow-lg` : 'bg-gray-200 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400'}`}>
-            January {year}
-          </div>
-        </motion.div>
-
-        {hasExperience && (
-          <motion.div className="absolute w-12 h-12 -translate-y-1/2 -translate-x-1/2" style={{ scale: pulseScale, opacity: pulseOpacity }}>
-            <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${hasExperience.color} animate-pulse blur-xl`} />
-          </motion.div>
-        )}
-      </div>
-
-      {/* Render sub-points (May, September) only if not the last year */}
-      {index < totalYears - 1 && (
-        <>
-          <SubPoint month="May" distanceFraction={4/12} yearProgress={yearProgress} nextYearProgress={0.1 + ((index + 1) / (totalYears - 1)) * 0.8} baseX={position} nextX={(index + 1) / (totalYears - 1) * 100} scrollYProgress={scrollYProgress} />
-          <SubPoint month="Sep" distanceFraction={8/12} yearProgress={yearProgress} nextYearProgress={0.1 + ((index + 1) / (totalYears - 1)) * 0.8} baseX={position} nextX={(index + 1) / (totalYears - 1) * 100} scrollYProgress={scrollYProgress} />
-        </>
-      )}
-    </div>
-  );
-}
-
-function SubPoint({ month, distanceFraction, yearProgress, nextYearProgress, baseX, nextX, scrollYProgress }: { month: string, distanceFraction: number, yearProgress: number, nextYearProgress: number, baseX: number, nextX: number, scrollYProgress: any }) {
-  const currentProgress = yearProgress + (nextYearProgress - yearProgress) * distanceFraction;
-  const position = baseX + (nextX - baseX) * distanceFraction;
-
-  const opacityLabel = useTransform(scrollYProgress, [currentProgress - 0.1, currentProgress, currentProgress + 0.1], [0.1, 0.8, 0.1]);
-  
-  return (
-    <div className="absolute top-0" style={{ left: `${position}%` }}>
-      {/* Small dot */}
-      <div className="absolute w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-600 border border-gray-300 dark:border-gray-500 -translate-y-1/2 -translate-x-1/2" />
-      {/* Month Label */}
-      <motion.div
-        className="absolute top-6 -translate-x-1/2 whitespace-nowrap text-xs font-medium text-gray-500"
-        style={{ opacity: opacityLabel }}
-      >
-        {month}
-      </motion.div>
-    </div>
-  );
-}
-
-function ExpMarkerPoint({ marker, scrollYProgress }: { marker: { label: string, progressFraction: number, progress: number }, scrollYProgress: any }) {
-  const position = marker.progressFraction * 100;
-  const opacityLabel = useTransform(scrollYProgress, [marker.progress - 0.1, marker.progress, marker.progress + 0.1], [0.1, 1, 0.1]);
-  
-  return (
-    <div className="absolute top-0 z-20" style={{ left: `${position}%` }}>
-      <div className="absolute w-4 h-4 rounded-full bg-blue-500 border-[3px] border-white dark:border-gray-900 -translate-y-1/2 -translate-x-1/2" />
-      <motion.div
-        className="absolute top-20 -translate-x-1/2 whitespace-nowrap text-sm font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded shadow-sm border border-blue-100 dark:border-blue-800"
-        style={{ opacity: opacityLabel }}
-      >
-        {marker.label}
-      </motion.div>
-    </div>
-  );
-}
-
-function AchievementItem({ achievement, index, startProgress, scrollYProgress }: { achievement: string, index: number, startProgress: number, scrollYProgress: any }) {
-  const itemStart = startProgress + 0.01 + (index * 0.01);
-  const opacity = useTransform(scrollYProgress, [itemStart - 0.02, itemStart], [0, 1]);
-  const y = useTransform(scrollYProgress, [itemStart - 0.02, itemStart], [20, 0]);
-
-  return (
-    <motion.div
-      className="bg-gray-50/80 dark:bg-white/5 backdrop-blur-sm border border-gray-200 dark:border-white/10 rounded-xl p-4 shadow-sm dark:shadow-none"
-      style={{ opacity, y }}
-    >
-      <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">{achievement}</p>
+           key={`star-${i}`}
+           className="absolute h-0.5 bg-gradient-to-r from-transparent via-cyan-200 to-transparent shadow-[0_0_20px_rgba(168,238,255,1)]"
+           style={{
+              width: Math.random() * 250 + 100 + "px",
+              left: Math.random() * 150 + "%",
+              top: Math.random() * 120 - 20 + "%",
+              rotate: "-45deg",
+           }}
+           animate={{
+              x: [0, -2000],
+              y: [0, 2000],
+              opacity: [0, 1, 0],
+           }}
+           transition={{
+              duration: Math.random() * 2 + 1.5,
+              repeat: Infinity,
+              repeatDelay: Math.random() * 6 + 1,
+              ease: "linear",
+           }}
+        />
+      ))}
     </motion.div>
   );
 }
 
-function ExperienceCard({ exp, index, years, scrollYProgress, totalCards }: { exp: ExperienceItem, index: number, years: number[], scrollYProgress: any, totalCards: number }) {
-  const startYearRange = years[0];
-  const endYearRange = years[years.length - 1];
+// Background Floating Particles
+function ParticleSystem() {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+      {Array.from({ length: 20 }).map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-1 h-1 bg-white rounded-full shadow-[0_0_10px_rgba(255,255,255,0.8)]"
+          initial={{
+            x: Math.random() * 100 + "vw",
+            y: Math.random() * 100 + "vh",
+            opacity: Math.random() * 0.5 + 0.1,
+            scale: Math.random() * 2,
+          }}
+          animate={{
+            y: [null, Math.random() * -200 - 100],
+            x: [null, (Math.random() - 0.5) * 100],
+            opacity: [null, 0],
+          }}
+          transition={{
+            duration: Math.random() * 10 + 10,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
 
-  const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-  
-  // Calculate Start Anchor
-  const sYearVal = exp.startYear ? parseInt(exp.startYear as string) : (Number(exp.year) || startYearRange);
-  const sMonthIdx = MONTHS.indexOf(exp.startMonth as string) !== -1 ? MONTHS.indexOf(exp.startMonth as string) : 0;
-  const startAnchor = sYearVal + (sMonthIdx / 12);
-  
-  // Calculate End Anchor
-  let endAnchor = startAnchor + 0.5; // fallback
-  if (exp.isCurrent) {
-    const d = new Date();
-    endAnchor = d.getFullYear() + (d.getMonth() / 12);
-  } else if (exp.endYear) {
-    const eYearVal = parseInt(exp.endYear as string) || sYearVal;
-    const eMonthIdx = MONTHS.indexOf(exp.endMonth as string) !== -1 ? MONTHS.indexOf(exp.endMonth as string) : 11;
-    endAnchor = eYearVal + ((eMonthIdx + 1) / 12);
-  } else if (exp.period && exp.period.includes('-')) {
-    endAnchor = startAnchor + 1; // legacy fallback
+function ExperienceCard({ exp, index }: { exp: ExperienceItem, index: number }) {
+  const [isFlipped, setIsFlipped] = useState(false);
+
+  // 3D Tilt Hook
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const rotateX = useTransform(y, [-100, 100], [10, -10]);
+  const rotateY = useTransform(x, [-100, 100], [-10, 10]);
+  const springRotateX = useSpring(rotateX, { damping: 20, stiffness: 300 });
+  const springRotateY = useSpring(rotateY, { damping: 20, stiffness: 300 });
+
+  function handleMouseMove(e: React.MouseEvent<HTMLDivElement, MouseEvent>) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    x.set(e.clientX - (rect.left + rect.width / 2));
+    y.set(e.clientY - (rect.top + rect.height / 2));
   }
-
-  const getProgress = (anchor: number) => {
-    const clamped = Math.max(startYearRange, Math.min(anchor, endYearRange));
-    const fraction = (clamped - startYearRange) / (endYearRange - startYearRange);
-    return 0.1 + (fraction * 0.8);
-  };
-
-  const startProgress = getProgress(startAnchor);
-  let endProgress = getProgress(endAnchor);
-  if (endProgress <= startProgress + 0.02) {
-      endProgress = startProgress + 0.05;
-  }
-
-  const opacity = useTransform(scrollYProgress, [startProgress - 0.02, startProgress, endProgress, endProgress + 0.02], [0, 1, 1, 0]);
-  const y = useTransform(scrollYProgress, [startProgress - 0.02, startProgress, endProgress, endProgress + 0.02], [50, 0, 0, -50]);
-  const scale = useTransform(scrollYProgress, [startProgress - 0.02, startProgress, endProgress, endProgress + 0.02], [0.95, 1, 1, 0.95]);
-  const rotateX = useTransform(scrollYProgress, [startProgress - 0.02, startProgress, endProgress, endProgress + 0.02], [5, 0, 0, -5]);
-
-  const lineOpacity = useTransform(scrollYProgress, [startProgress - 0.02, startProgress, endProgress, endProgress + 0.02], [0, 1, 1, 0]);
-  const glowOpacity = useTransform(scrollYProgress, [startProgress - 0.02, startProgress, endProgress, endProgress + 0.02], [0, 0.5, 0.5, 0]);
-  
-  // Stagger overlapping cards to prevent them directly occluding one another
-  const topOffset = 15 + (index * 2);
 
   return (
-    <motion.div
-      className="absolute left-[50%] w-[90%] max-w-3xl"
-      style={{ top: `${topOffset}%`, opacity, y, scale, rotateX, transformPerspective: 1200, x: '-50%' }}
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.8, y: 100 }}
+      whileInView={{ opacity: 1, scale: 1, y: 0 }}
+      viewport={{ once: true, margin: "-100px" }}
+      transition={{ type: "spring", damping: 25, stiffness: 60, delay: 0.2 }}
+      className="relative flex flex-col justify-center h-full w-[85vw] md:w-[65vw] max-w-6xl shrink-0 group perspective-[2000px] mx-10"
     >
       <motion.div
-        className="absolute left-1/2 -translate-x-1/2 w-0.5 bg-gradient-to-b from-gray-300 dark:from-white/50 to-transparent top-full"
-        style={{ height: '200px', opacity: lineOpacity }}
-      />
-      <div className="relative">
+         onMouseMove={handleMouseMove}
+         onMouseLeave={() => { x.set(0); y.set(0); }}
+         style={{ rotateX: springRotateX, rotateY: springRotateY, transformStyle: "preserve-3d" }}
+         animate={{ y: [0, -15, 0] }}
+         transition={{ duration: 6 + (index % 3), repeat: Infinity, ease: "easeInOut" }}
+         className="relative cursor-pointer w-full"
+      >
         <motion.div 
-          className={`absolute inset-0 bg-gradient-to-br ${exp.color} blur-3xl rounded-3xl`}
-          style={{ opacity: glowOpacity }}
-        />
-        <div className="relative bg-white/90 dark:bg-white/10 backdrop-blur-xl border border-gray-100 dark:border-white/20 rounded-3xl p-8 md:p-10 shadow-2xl">
-          <div className="flex items-center gap-4 mb-6">
-            <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${exp.color} flex items-center justify-center flex-shrink-0 shadow-lg`}>
-              <Briefcase className="text-white" size={28} />
-            </div>
-            <div>
-              <h3 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">{exp.company}</h3>
-              <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mt-1">
-                <Calendar size={16} />
-                <span className="text-base">{exp.period}</span>
-              </div>
-            </div>
-          </div>
-          <h4 className="text-2xl md:text-3xl font-semibold text-blue-400 mb-4">{exp.position}</h4>
-          <p className="text-gray-600 dark:text-gray-300 text-lg mb-6 leading-relaxed">{exp.description}</p>
-          <div>
-            <p className="text-gray-900 dark:text-white font-semibold mb-4 text-lg">Key Achievements:</p>
-            <div className="grid md:grid-cols-3 gap-4">
-              {exp.achievements.map((achievement, i) => (
-                <AchievementItem key={i} achievement={achievement} index={i} startProgress={startProgress} scrollYProgress={scrollYProgress} />
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+           className="relative w-full"
+           style={{ transformStyle: "preserve-3d" }}
+           animate={{ rotateY: isFlipped ? 180 : 0 }}
+           transition={{ type: "spring", stiffness: 60, damping: 15 }}
+           onClick={() => setIsFlipped(!isFlipped)}
+        >
+           {/* Grid Hack for Flip Card Height Auto-Sizing */}
+           <div className="grid w-full" style={{ transformStyle: "preserve-3d" }}>
+             
+             {/* FRONT FACE */}
+             <div 
+               className="col-start-1 row-start-1 w-full"
+               style={{ backfaceVisibility: "hidden" }}
+             >
+                <div className="relative bg-white/10 dark:bg-gray-900/40 backdrop-blur-3xl border-[2px] border-white/40 dark:border-white/10 rounded-[3rem] p-10 md:p-14 shadow-[0_30px_60px_rgba(0,0,0,0.2)] dark:shadow-[0_40px_80px_rgba(0,0,0,0.6)] hover:border-blue-400 group-hover:shadow-[0_0_80px_rgba(59,130,246,0.3)] transition-all duration-500 overflow-hidden w-full h-full flex flex-col items-center justify-center text-center pb-24">
+                  <div className={`absolute -inset-20 opacity-30 blur-[100px] bg-gradient-to-br ${exp.color || 'from-blue-500 to-purple-500'} pointer-events-none group-hover:opacity-60 transition-opacity duration-1000`} />
+                  
+                  <div className="relative z-10 flex flex-col items-center justify-center gap-12 w-full" style={{ transform: "translateZ(50px)" }}>
+                     <motion.div 
+                       whileHover={{ scale: 1.1, rotate: 5 }}
+                       className={`w-32 h-32 rounded-[2rem] bg-gradient-to-br ${exp.color} flex items-center justify-center shadow-[0_0_40px_rgba(0,0,0,0.3)] border border-white/30 text-white relative overflow-hidden`}
+                     >
+                       <motion.div animate={{ x: ['-100%', '200%'] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 4 }} className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12" />
+                       <Briefcase size={50} />
+                     </motion.div>
+                     
+                     <div>
+                       <h3 className="text-5xl md:text-7xl font-black text-gray-900 dark:text-white leading-tight drop-shadow-md mb-4">{exp.company}</h3>
+                       <h4 className="text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500 dark:from-cyan-400 dark:to-blue-400 justify-center flex items-center gap-3">
+                         {exp.position} <Sparkles size={24} className="text-yellow-400" />
+                       </h4>
+                     </div>
+
+                     <div className="inline-flex items-center gap-4 px-8 py-5 rounded-3xl bg-white/50 dark:bg-black/50 backdrop-blur-md text-lg font-bold text-gray-800 dark:text-gray-200 shadow-inner border border-white/40 dark:border-white/10">
+                       <Calendar size={28} className="text-blue-500 animate-pulse" />
+                       <div className="flex gap-3 items-center">
+                         <span>{exp.startMonth} {exp.startYear || exp.year}</span>
+                         <span className="text-cyan-500 font-black">→</span>
+                         <span>{exp.isCurrent ? <span className="text-purple-500 animate-pulse">Present</span> : `${exp.endMonth} ${exp.endYear || exp.year}`}</span>
+                       </div>
+                     </div>
+                     
+                     <div className="absolute bottom-8 right-[50%] translate-x-[50%] text-blue-600 dark:text-blue-400 animate-bounce flex items-center gap-2 font-black text-sm md:text-base uppercase tracking-widest bg-white/40 dark:bg-white/10 px-6 py-3 rounded-full border border-white/60 dark:border-white/20 shadow-sm backdrop-blur-md">
+                       Click to Flip for Details
+                     </div>
+                  </div>
+                </div>
+             </div>
+
+             {/* BACK FACE */}
+             <div 
+               className="col-start-1 row-start-1 w-full"
+               style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
+             >
+                <div className="relative bg-white/10 dark:bg-gray-900/40 backdrop-blur-3xl border-[2px] border-blue-400 dark:border-white/10 rounded-[3rem] p-10 md:p-14 shadow-[0_30px_60px_rgba(0,0,0,0.2)] dark:shadow-[0_40px_80px_rgba(0,0,0,0.6)] transition-all duration-500 overflow-hidden w-full h-full flex flex-col justify-start">
+                  <div className={`absolute -inset-20 opacity-20 blur-[100px] bg-gradient-to-tr ${exp.color || 'from-blue-500 to-purple-500'} pointer-events-none transition-opacity duration-1000`} />
+                  
+                  <div className="relative z-10 flex flex-col gap-6 w-full" style={{ transform: "translateZ(50px)" }}>
+                    <div className="flex items-center justify-between pb-6 border-b border-white/20 dark:border-white/10">
+                      <h3 className="text-2xl font-black text-gray-900 dark:text-white drop-shadow-md">{exp.company} <span className="text-blue-500 mx-2">|</span> {exp.position}</h3>
+                    </div>
+
+                    <p className="text-gray-700 dark:text-gray-300 text-lg md:text-xl leading-relaxed font-medium bg-white/20 dark:bg-black/30 p-8 rounded-3xl border border-white/20 shadow-inner">
+                      {exp.description}
+                    </p>
+
+                    {exp.achievements && exp.achievements.length > 0 && exp.achievements.some(a => a.trim()) && (
+                      <div className="mt-2">
+                        <h5 className="text-sm uppercase tracking-widest font-black text-blue-500 dark:text-blue-400 mb-4 flex items-center gap-3 justify-start">
+                          <Award size={18} /> Impact Highlights
+                        </h5>
+                        <ul className="grid grid-cols-1 gap-3">
+                          {exp.achievements.filter(a => a.trim()).map((achievement, i) => (
+                            <li 
+                              key={i}
+                              className="group/item flex items-start gap-4 bg-white/40 dark:bg-white/10 backdrop-blur-xl rounded-2xl p-4 border border-white/40 dark:border-white/20 shadow-sm text-left transition-all duration-300 hover:bg-white/60 dark:hover:bg-white/20 hover:-translate-y-1"
+                            >
+                              <ChevronRight size={20} className="text-cyan-500 shrink-0 mt-0.5 group-hover/item:text-blue-600 dark:group-hover/item:text-blue-400 transition-colors" />
+                              <span className="text-gray-800 dark:text-gray-100 text-base md:text-lg font-bold leading-snug">{achievement}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+             </div>
+
+           </div>
+        </motion.div>
+      </motion.div>
     </motion.div>
   );
 }
 
 export function Timeline() {
   const { content, loading } = useContent();
-  if (loading || !content) return <div className="min-h-screen bg-gray-50 dark:bg-gray-900" />;
+  if (loading || !content) return <div className="min-h-screen bg-gray-50 dark:bg-gray-950" />;
   return <TimelineInner timelineContent={content.timeline} />;
 }
 
 function TimelineInner({ timelineContent }: { timelineContent: TimelineContent }) {
-  const containerRef = useRef<HTMLElement>(null);
-  const [showInstruction, setShowInstruction] = useState(true);
-  
-  const { scrollYProgress } = useScroll({
-    target: containerRef as any,
-    offset: ["start start", "end end"]
-  });
-
-  useEffect(() => {
-    const timer = setTimeout(() => setShowInstruction(false), 4000);
-    return () => clearTimeout(timer);
-  }, []);
-
   const { title, subtitle, experiences } = timelineContent;
+  const containerRef = useRef<HTMLElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
   
-  const allYears: number[] = [];
-  experiences.forEach(e => {
-    if (!isNaN(Number(e.year))) allYears.push(Number(e.year));
-    if (e.startYear && !isNaN(parseInt(e.startYear as string))) allYears.push(parseInt(e.startYear as string));
-    if (e.endYear && !isNaN(parseInt(e.endYear as string))) allYears.push(parseInt(e.endYear as string));
-    if (e.isCurrent) allYears.push(new Date().getFullYear());
-  });
-  
-  const minYear = allYears.length > 0 ? Math.min(Math.floor(Math.min(...allYears)), 2021) : 2021;
-  const maxYear = allYears.length > 0 ? Math.max(Math.ceil(Math.max(...allYears)), 2025) : 2025;
-  
-  const startYear = minYear - 1;
-  const endYear = maxYear + 1;
-  const years = Array.from({ length: endYear - startYear + 1 }, (_, i) => startYear + i);
-  const numExperiences = experiences.length;
+  // Create a massive height so there's plenty of vertical scroll space to map to horizontal
+  // For standard laptops, 600vh gives a very smooth slow pan effect.
+  const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start start", "end end"] });
 
-  const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-  
-  const experienceMarkers: { label: string, progressFraction: number, progress: number }[] = [];
-  experiences.forEach(e => {
-     const sY = e.startYear ? parseInt(e.startYear as string) : (Number(e.year) || startYear);
-     const sM = MONTHS.indexOf(e.startMonth as string);
-     if (sM > 0) { // Don't plot Jan, already handled by YearMarker
-       const sAnchor = sY + (sM / 12);
-       const sFrac = (sAnchor - startYear) / (endYear - startYear);
-       experienceMarkers.push({ label: `${e.startMonth?.substring(0,3)} ${sY}`, progressFraction: sFrac, progress: 0.1 + sFrac * 0.8 });
+  const [xRange, setXRange] = useState([0, 0]);
+
+  useLayoutEffect(() => {
+     if (trackRef.current) {
+        const calculateRange = () => {
+           const trackWidth = trackRef.current?.scrollWidth || 0;
+           const windowWidth = window.innerWidth;
+           // The maximum distance the track can move left is the total width minus what fits on one screen
+           setXRange([0, -(trackWidth - windowWidth)]);
+        };
+        calculateRange();
+        window.addEventListener("resize", calculateRange);
+        return () => window.removeEventListener("resize", calculateRange);
      }
-     
-     if (!e.isCurrent && e.endYear) {
-       const eM = MONTHS.indexOf(e.endMonth as string);
-       if (eM >= 0) { // eM could be 0 (Jan), it's fine to plot "Jan End"
-         const eY = parseInt(e.endYear as string) || sY;
-         const eAnchor = eY + ((eM + 1) / 12);
-         const eFrac = (eAnchor - startYear) / (endYear - startYear);
-         experienceMarkers.push({ label: `${e.endMonth?.substring(0,3)} ${eY}`, progressFraction: eFrac, progress: 0.1 + eFrac * 0.8 });
-       }
-     }
-  });
+  }, [experiences]);
 
-  const timelineWidthVw = 200;
-  const timelineX = useTransform(
-    scrollYProgress, 
-    [0.1, 0.9], 
-    ['50vw', `-${timelineWidthVw - 50}vw`]
-  );
+  // Map 0-1 vertical scroll progress to lateral translation using raw pixel boundaries
+  const x = useTransform(scrollYProgress, [0, 1], xRange);
 
-  const headerOpacity = useTransform(scrollYProgress, [0, 0.15], [1, 0]);
-  const headerY = useTransform(scrollYProgress, [0, 0.15], [0, -50]);
-  
-  const endOpactiy = useTransform(scrollYProgress, [0.92, 1], [0, 1]);
-  const endY = useTransform(scrollYProgress, [0.92, 1], [20, 0]);
-  const endScale = useTransform(scrollYProgress, [0.92, 1], [0.9, 1]);
-  
-  const progressBarWidth = useTransform(scrollYProgress, [0, 1], ['0%', '100%']);
-  const timelineProgressWidth = useTransform(scrollYProgress, [0.1, 0.9], ['0%', '100%']);
-
-  const parallaxX = useTransform(scrollYProgress, [0, 1], ["0vw", "-100vw"]);
-
-  // Link range slider directly to scrollProgress
-  const [sliderValue, setSliderValue] = useState(0);
-
-  useEffect(() => {
-    return scrollYProgress.onChange((latest) => {
-      setSliderValue(latest * 100);
-    });
-  }, [scrollYProgress]);
-
-  const handleSliderChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const newValue = parseFloat(e.target.value);
-    setSliderValue(newValue);
-    
-    if (containerRef.current) {
-      const container = containerRef.current;
-      const rect = container.getBoundingClientRect();
-      const scrollableDistance = rect.height - window.innerHeight;
-      const targetScrollY = window.scrollY + rect.top + (newValue / 100) * scrollableDistance;
-      window.scrollTo({ top: targetScrollY, behavior: 'auto' });
-    }
-  };
+  // Parallax background elements
+  const parallaxY1 = useTransform(scrollYProgress, [0, 1], ["0%", "80%"]);
+  const parallaxY2 = useTransform(scrollYProgress, [0, 1], ["0%", "-80%"]);
 
   return (
-    <section 
-      ref={containerRef}
-      id="experience" 
-      className="relative bg-gray-50 dark:bg-gray-950 transition-colors duration-500"
-      style={{ height: `${(numExperiences + 2) * 100}vh` }}
-    >
-      <motion.div
-        className="fixed top-32 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: showInstruction ? 1 : 0, y: showInstruction ? 0 : -20 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="bg-blue-600/90 backdrop-blur-md text-white px-6 py-4 rounded-2xl shadow-2xl border border-blue-400/30">
-          <div className="flex items-center gap-3">
-            <div className="flex flex-col items-center gap-1">
-              <ArrowDown size={20} className="animate-bounce" />
-              <ArrowUp size={20} className="animate-bounce" style={{ animationDelay: '0.5s' }} />
-            </div>
-            <div>
-              <p className="font-semibold text-lg">Scroll to Navigate Timeline</p>
-              <p className="text-sm text-blue-100">Scroll up/down to move through the years</p>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-
-      <div className="sticky top-0 h-screen flex items-center justify-center overflow-hidden">
+    <>
+      <section ref={containerRef} id="experience" className="relative h-[600vh] bg-slate-50 dark:bg-black transition-colors duration-700">
         
-        {/* Parallax Background Orbs */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_200px,#bae6fd,transparent)] dark:bg-[radial-gradient(circle_800px_at_50%_200px,#1e3a8a,transparent)] opacity-60" />
+        {/* The sticky viewport that locks onto the screen */}
+        <div className="sticky top-0 h-screen overflow-hidden flex items-center perspective-1200">
           
-          <motion.div style={{ x: parallaxX }} className="absolute inset-y-0 left-0 w-[200vw] h-full">
-            <motion.div 
-              animate={{ x: [0, 100, 0], y: [0, -100, 0] }}
-              transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute -top-[10%] left-[5vw] w-[500px] h-[500px] rounded-full bg-blue-400/60 dark:bg-blue-600/40 blur-[90px]"
-            />
-            
-            <motion.div 
-              animate={{ x: [0, -120, 0], y: [0, 80, 0] }}
-              transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute top-[40%] left-[80vw] w-[600px] h-[600px] rounded-full bg-purple-400/50 dark:bg-purple-800/40 blur-[90px]"
-            />
-            
-            <motion.div 
-              animate={{ scale: [1, 1.25, 1], opacity: [0.5, 0.9, 0.5] }}
-              transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute -bottom-[20%] left-[120vw] w-[700px] h-[700px] rounded-full bg-cyan-300/50 dark:bg-cyan-800/30 blur-[100px]"
-            />
+          <ParticleSystem />
+          <ShootingStars scrollYProgress={scrollYProgress} />
+          <div className="absolute inset-0 pointer-events-none z-0">
+            <motion.div style={{ y: parallaxY1, rotate: scrollYProgress }} className="absolute text-[40rem] text-blue-500/5 dark:text-blue-900/10 -top-20 -left-40 font-black">EXP</motion.div>
+            <motion.div style={{ y: parallaxY2 }} className="absolute top-[40%] right-[5vw] w-[800px] h-[800px] rounded-full bg-purple-400/20 dark:bg-purple-900/40 blur-[150px]" />
+          </div>
 
+          {/* The Horizontal Panning Track */}
+          <motion.div ref={trackRef} style={{ x }} className="flex items-center h-full w-max pl-[15vw] pr-[5vw] md:pr-[2vw] relative z-20 gap-16 md:gap-24">
+            
+            {/* 1. Title Slide */}
+            <div className="w-[80vw] md:w-[50vw] shrink-0 flex flex-col justify-center">
+              <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-white dark:bg-white/10 text-blue-600 dark:text-cyan-400 font-black uppercase tracking-[0.2em] text-sm mb-8 shadow-[0_0_30px_rgba(59,130,246,0.5)] border border-blue-100 dark:border-white/20 backdrop-blur-md w-fit">
+                <Zap size={18} className="animate-pulse" />
+                Career Route
+              </div>
+              <h2 className="text-6xl md:text-8xl md:text-[8rem] font-black text-transparent bg-clip-text bg-gradient-to-br from-blue-900 via-purple-600 to-cyan-500 dark:from-cyan-300 dark:via-purple-400 dark:to-blue-500 mb-8 tracking-tighter drop-shadow-2xl leading-tight">{title}</h2>
+              <p className="text-3xl md:text-4xl text-gray-600 dark:text-gray-300 leading-relaxed font-bold">{subtitle}</p>
+              
+              <motion.div animate={{ x: [0, 20, 0] }} transition={{ duration: 2, repeat: Infinity }} className="mt-16 flex items-center gap-4 text-cyan-500 font-bold text-2xl uppercase tracking-widest">
+                Scroll to Traverse <ChevronRight size={32} />
+              </motion.div>
+            </div>
+
+            {/* Glowing Horizontal Beam connecting all cards */}
+            <div className="absolute top-1/2 left-[50vw] right-[50vw] h-[4px] bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-30 shadow-[0_0_20px_rgba(59,130,246,0.5)] -translate-y-1/2 z-0" />
+
+            {/* 2. Map Experiences Horizontally */}
+            {experiences.map((exp, index) => <ExperienceCard key={index} exp={exp} index={index} />)}
+
+            {/* 3. The End Milestone */}
             <motion.div 
-              animate={{ x: [0, 80, 0], y: [0, 100, 0] }}
-              transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute top-[20%] left-[170vw] w-[600px] h-[600px] rounded-full bg-blue-300/60 dark:bg-blue-700/40 blur-[90px]"
-            />
+               initial={{ opacity: 0, scale: 0.8 }}
+               whileInView={{ opacity: 1, scale: 1 }}
+               onViewportEnter={() => console.log('End Reached')}
+               className="w-[100vw] shrink-0 flex flex-col items-center justify-center text-center px-6 z-10"
+            >
+              <div className="w-32 h-32 rounded-full border-[4px] border-dashed border-cyan-500 flex items-center justify-center mb-12 animate-[spin_10s_linear_infinite]">
+                 <div className="w-20 h-20 rounded-full bg-cyan-500 shadow-[0_0_50px_rgba(34,211,238,1)] animate-pulse" />
+              </div>
+              <h2 className="text-5xl md:text-[5rem] font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-500 mb-8 leading-tight max-w-5xl">Looking forward to future opportunities.</h2>
+              <div className="mt-12 flex flex-col items-center text-gray-400 font-bold uppercase tracking-[0.3em] text-xl gap-6 animate-bounce">
+                Resume Vertical Descent
+                <ArrowDown size={40} className="text-purple-500" />
+              </div>
+            </motion.div>
+
           </motion.div>
         </div>
+      </section>
 
-        <motion.div
-          className="absolute top-24 left-0 right-0 text-center z-10 px-6"
-          style={{ opacity: headerOpacity, y: headerY }}
-        >
-          <p className="text-blue-400 font-medium mb-2 text-lg">Career Journey</p>
-          <h2 className="text-5xl md:text-7xl font-bold text-gray-900 dark:text-white mb-4">{title}</h2>
-          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">{subtitle}</p>
-        </motion.div>
+      {/* Vertical Resumed Section: Current Passions */}
+      <section className="relative min-h-screen bg-slate-100 dark:bg-black py-40 z-30 border-t border-gray-200 dark:border-white/10 overflow-hidden">
+        
+        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-gradient-to-bl from-purple-600/20 to-transparent blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-to-tr from-cyan-600/20 to-transparent blur-[100px] rounded-full pointer-events-none" />
 
-        <motion.div className="absolute bottom-[20%] left-0 flex items-center" style={{ x: timelineX, width: `${timelineWidthVw}vw` }}>
-          <div className="relative flex items-center w-full">
-            <div className="absolute top-1/2 left-0 right-0 h-1 bg-gray-200 dark:bg-gray-700" />
-            <motion.div 
-              className="absolute top-1/2 left-0 h-1 bg-gradient-to-r from-green-500 via-orange-500 via-purple-500 to-blue-500 origin-left"
-              style={{ width: timelineProgressWidth }}
-            />
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
+          <motion.div 
+             initial={{ opacity: 0, y: 100 }}
+             whileInView={{ opacity: 1, y: 0 }}
+             viewport={{ once: true, margin: "-100px" }}
+             transition={{ duration: 0.8 }}
+          >
+            <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 font-black uppercase tracking-[0.2em] text-sm mb-8 border border-purple-200 dark:border-purple-800/50">
+              <Sparkles size={18} /> Outside The Resume
+            </div>
+            
+            <h2 className="text-6xl md:text-8xl font-black text-gray-900 dark:text-white mb-20 tracking-tighter drop-shadow-xl">
+              Current Passions &
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-cyan-500 mt-2">Active Pursuits.</span>
+            </h2>
 
-            {years.map((year, index) => {
-              const hasExperience = experiences.find((exp: ExperienceItem) => Math.floor(Number(exp.year)) === year);
-              return (
-                <YearMarker 
-                  key={year} 
-                  year={year} 
-                  index={index} 
-                  totalYears={years.length} 
-                  scrollYProgress={scrollYProgress} 
-                  hasExperience={hasExperience} 
-                />
-              );
-            })}
-            {experienceMarkers.map((marker, i) => (
-              <ExpMarkerPoint key={`m-${i}`} marker={marker} scrollYProgress={scrollYProgress} />
-            ))}
-          </div>
-        </motion.div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-24 text-2xl md:text-3xl text-gray-700 dark:text-gray-300 leading-relaxed font-medium">
+              <div className="space-y-12">
+                <p>
+                  While my career has given me incredible opportunities to build scalable systems and AI architectures, I'm deeply passionate about the continuous evolution of machine learning frameworks. Right now, I am actively exploring multi-modal neural networks and their applications in creating seamlessly intuitive human-computer interfaces.
+                </p>
+                <div className="h-[2px] w-32 bg-gradient-to-r from-purple-500 to-transparent my-8" />
+                <p>
+                  Beyond the code, I am fascinated by entrepreneurship and the mechanics of turning a raw technical innovation into a tangible business model. The intersection of rapid prototyping and product-market fit is where I dedicate a significant portion of my unstructured time.
+                </p>
+              </div>
 
-        {experiences.map((exp: ExperienceItem, index: number) => (
-          <ExperienceCard 
-            key={index}
-            exp={exp}
-            index={index}
-            years={years}
-            scrollYProgress={scrollYProgress}
-            totalCards={experiences.length}
-          />
-        ))}
-
-        <motion.div
-          className="absolute top-[40%] left-1/2 -translate-x-1/2 text-center z-10 w-full px-6 pointer-events-none"
-          style={{ opacity: endOpactiy, y: endY, scale: endScale }}
-        >
-          <h2 className="text-4xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 dark:from-blue-400 dark:via-purple-400 dark:to-blue-400 mb-4">
-            Looking Forward
-          </h2>
-          <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            to what the future brings.
-          </p>
-        </motion.div>
-
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-64 md:w-96 group">
-          <input 
-            type="range" 
-            min="0" 
-            max="100" 
-            step="0.1"
-            value={sliderValue}
-            onChange={handleSliderChange}
-            className="w-full h-2 bg-gray-200 dark:bg-gray-800 rounded-full outline-none appearance-none cursor-grab active:cursor-grabbing z-50 relative"
-            style={{
-              background: `linear-gradient(to right, #3b82f6 ${sliderValue}%, #1f2937 ${sliderValue}%)`
-            }}
-          />
-          <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-medium text-gray-500 dark:text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-            Drag to Navigate
-          </div>
-          
-          <style dangerouslySetInnerHTML={{__html: `
-            input[type=range]::-webkit-slider-thumb {
-              appearance: none;
-              width: 16px;
-              height: 16px;
-              border-radius: 50%;
-              background: #fff;
-              cursor: grab;
-              box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
-              transition: transform 0.1s;
-            }
-            input[type=range]::-webkit-slider-thumb:active {
-              cursor: grabbing;
-              transform: scale(1.2);
-            }
-          `}} />
+              <div className="space-y-12">
+                <p>
+                  I believe that the best engineers are not just coders, but product visionaries. Whether it's hacking together a new side project over the weekend or diving deep into the latest research papers on graph neural networks, my core mission remains the same: to relentlessly build, break, and optimize systems that actually have a meaningful impact on how people interact with technology.
+                </p>
+                <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-gray-200 dark:border-white/10 p-10 rounded-3xl shadow-xl mt-8">
+                  <h4 className="text-3xl font-black text-gray-900 dark:text-white mb-6">Learning Goals for 2026:</h4>
+                  <ul className="space-y-4 text-xl">
+                    <li className="flex items-center gap-4"><Zap className="text-yellow-500" /> Advanced Reinforcement Learning</li>
+                    <li className="flex items-center gap-4"><Zap className="text-yellow-500" /> Distributed Cloud Architectures</li>
+                    <li className="flex items-center gap-4"><Zap className="text-yellow-500" /> Edge Computing Deployment</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }

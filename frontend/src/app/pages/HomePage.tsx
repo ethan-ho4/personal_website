@@ -8,7 +8,7 @@ import { BackgroundOrbs } from '../components/BackgroundOrbs';
 export function HomePage() {
   const { content } = useContent();
   return (
-    <div className="relative min-h-screen flex items-center justify-center pt-20 px-6 bg-gray-50 dark:bg-gray-950 transition-colors overflow-hidden">
+    <div id="home" className="relative min-h-screen flex items-center justify-center pt-20 px-6 bg-gray-50 dark:bg-gray-950 transition-colors overflow-hidden">
       <BackgroundOrbs />
       <div className="relative z-10 max-w-7xl w-full grid md:grid-cols-2 gap-12 items-center py-12">
         <motion.div 

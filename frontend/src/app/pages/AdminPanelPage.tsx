@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { useContent, SiteContent, HeroContent, AboutContent, ProjectsContent, ProjectItem, SkillsContent, SkillCategory, ContactContent, TimelineContent, ExperienceItem, SocialsContent } from '../context/ContentContext';
-import { Plus, Trash2 } from 'lucide-react';
+import { useContent, SiteContent, HomeContent, AboutContent, ProjectsContent, ProjectItem, SkillsContent, SkillCategory, ContactContent, TimelineContent, ExperienceItem, SocialsContent } from '../context/ContentContext';
+import { Plus, Trash2, Upload, Loader2, FileUp } from 'lucide-react';
 
-const TABS = ['hero', 'about', 'experience', 'projects', 'skills', 'contact', 'socials', 'json'] as const;
+const TABS = ['home', 'experience', 'projects', 'skills', 'contact', 'socials', 'json'] as const;
 type TabType = typeof TABS[number];
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -56,34 +56,23 @@ function FormSelect({ label, value, options, onChange }: { label: string, value:
 }
 
 // --- Section Editors ---
-function HeroEditor({ data, onChange }: { data: HeroContent, onChange: (d: HeroContent) => void }) {
-  const update = (field: keyof HeroContent, value: string) => onChange({ ...data, [field]: value });
+function HomeEditor({ data, onChange }: { data: HomeContent, onChange: (d: HomeContent) => void }) {
+  const update = (field: keyof HomeContent, value: any) => onChange({ ...data, [field]: value });
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">Hero Section</h2>
-      <FormInput label="Title" value={data.title} onChange={(v) => update('title', v)} />
-      <FormInput label="Subtitle" value={data.subtitle} onChange={(v) => update('subtitle', v)} />
-      <FormTextarea label="Description" value={data.description} onChange={(v) => update('description', v)} rows={4} />
-    </div>
-  );
-}
-
-function AboutEditor({ data, onChange }: { data: AboutContent, onChange: (d: AboutContent) => void }) {
-  const update = (field: keyof AboutContent, value: any) => onChange({ ...data, [field]: value });
-  return (
-    <div>
-      <h2 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">About Section</h2>
-      <FormInput label="Title" value={data.title} onChange={(v) => update('title', v)} />
-      <FormTextarea label="Description Paragraph 1" value={data.description1} onChange={(v) => update('description1', v)} />
-      <FormTextarea label="Description Paragraph 2" value={data.description2} onChange={(v) => update('description2', v)} />
+      <h2 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">Home & About Section</h2>
+      <FormInput label="Hero Title" value={data.title} onChange={(v) => update('title', v)} />
+      <FormInput label="Hero Subtitle" value={data.subtitle} onChange={(v) => update('subtitle', v)} />
+      <FormTextarea label="Introduction Paragraph 1" value={data.description1 || ''} onChange={(v) => update('description1', v)} rows={3} />
+      <FormTextarea label="Introduction Paragraph 2" value={data.description2 || ''} onChange={(v) => update('description2', v)} rows={3} />
       
       <div className="mt-8 mb-4 flex justify-between items-center">
         <h3 className="text-lg font-medium text-gray-900 dark:text-white">Quick Stats</h3>
-        <button onClick={() => update('stats', [...data.stats, {label: 'New Stat', value: '0'}])} className="text-blue-600 flex items-center gap-1 text-sm bg-blue-50 dark:bg-blue-900/30 py-1 px-3 rounded-md hover:bg-blue-100 transition-colors">
+        <button onClick={() => update('stats', [...(data.stats||[]), {label: 'New Stat', value: '0'}])} className="text-blue-600 flex items-center gap-1 text-sm bg-blue-50 dark:bg-blue-900/30 py-1 px-3 rounded-md hover:bg-blue-100 transition-colors">
           <Plus size={16}/> Add Stat
         </button>
       </div>
-      {data.stats.map((stat, idx) => (
+      {(data.stats||[]).map((stat, idx) => (
         <div key={idx} className="flex gap-4 items-end mb-4 border border-gray-200 dark:border-gray-700 p-4 rounded-lg relative bg-gray-50/50 dark:bg-gray-800/50">
           <button onClick={() => { const ns = [...data.stats]; ns.splice(idx, 1); update('stats', ns); }} className="absolute top-2 right-2 text-red-500 hover:text-red-700"><Trash2 size={16}/></button>
           <div className="flex-1">
@@ -97,16 +86,16 @@ function AboutEditor({ data, onChange }: { data: AboutContent, onChange: (d: Abo
 
       <div className="mt-8 mb-4 flex justify-between items-center">
         <h3 className="text-lg font-medium text-gray-900 dark:text-white">Highlights</h3>
-        <button onClick={() => update('highlights', [...data.highlights, {icon: 'Code', title: 'New Highlight', description: ''}])} className="text-blue-600 flex items-center gap-1 text-sm bg-blue-50 dark:bg-blue-900/30 py-1 px-3 rounded-md hover:bg-blue-100 transition-colors">
+        <button onClick={() => update('highlights', [...(data.highlights||[]), {icon: 'Code', title: 'New Highlight', description: ''}])} className="text-blue-600 flex items-center gap-1 text-sm bg-blue-50 dark:bg-blue-900/30 py-1 px-3 rounded-md hover:bg-blue-100 transition-colors">
           <Plus size={16}/> Add Highlight
         </button>
       </div>
-      {data.highlights.map((hlt, idx) => (
+      {(data.highlights||[]).map((hlt, idx) => (
         <div key={idx} className="mb-4 border border-gray-200 dark:border-gray-700 p-4 rounded-lg relative bg-gray-50/50 dark:bg-gray-800/50">
           <button onClick={() => { const nh = [...data.highlights]; nh.splice(idx, 1); update('highlights', nh); }} className="absolute top-4 right-4 text-red-500 hover:text-red-700"><Trash2 size={16}/></button>
           <FormInput label="Icon Name (Lucide React)" value={hlt.icon} onChange={(v) => { const nh = [...data.highlights]; nh[idx].icon = v; update('highlights', nh); }} />
           <FormInput label="Title" value={hlt.title} onChange={(v) => { const nh = [...data.highlights]; nh[idx].title = v; update('highlights', nh); }} />
-          <FormInput label="Description" value={hlt.description} onChange={(v) => { const nh = [...data.highlights]; nh[idx].description = v; update('highlights', nh); }} />
+          <FormTextarea label="Description" value={hlt.description} onChange={(v) => { const nh = [...data.highlights]; nh[idx].description = v; update('highlights', nh); }} rows={2} />
         </div>
       ))}
     </div>
@@ -431,7 +420,66 @@ export function AdminPanelPage() {
   const [jsonString, setJsonString] = useState<string>('');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
-  const [activeTab, setActiveTab] = useState<TabType>('hero');
+  const [activeTab, setActiveTab] = useState<TabType>('home');
+  const [uploading, setUploading] = useState(false);
+  const [progressText, setProgressText] = useState('');
+
+  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setUploading(true);
+    setProgressText('Extracting text from PDF...');
+    setMessage({ type: 'success', text: 'Uploading and analyzing resume with AI. This may take a minute...' });
+    
+    const stages = [
+      'Extracting text from PDF...',
+      'Mapping resume to Home section...',
+      'Generating About & Summary...',
+      'Structuring Experience Timeline...',
+      'Categorizing Skills...',
+      'Finalizing Content...'
+    ];
+    let stageIdx = 0;
+    const interval = setInterval(() => {
+      stageIdx = (stageIdx + 1) % stages.length;
+      if (stageIdx < stages.length - 1) {
+        setProgressText(stages[stageIdx]);
+      }
+    }, 4500);
+
+    const token = localStorage.getItem('adminToken');
+    
+    const formDataObj = new FormData();
+    formDataObj.append('file', file);
+    
+    try {
+      const response = await fetch('/api/upload-resume', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formDataObj
+      });
+      
+      const resData = await response.json();
+      if (!response.ok) throw new Error(resData.error || 'Failed to parse resume');
+      
+      setMessage({ type: 'success', text: 'Resume successfully analyzed and applied! Click "Save All Changes" to persist.' });
+      
+      if (resData.data) {
+        setFormData(resData.data);
+        setJsonString(JSON.stringify(resData.data, null, 2));
+      } else {
+        await refreshContent();
+      }
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message || 'Error processing resume.' });
+    } finally {
+      clearInterval(interval);
+      setUploading(false);
+      setProgressText('');
+      e.target.value = '';
+    }
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -505,11 +553,13 @@ export function AdminPanelPage() {
       
       if (!response.ok) throw new Error('Failed to save');
       
-      setMessage({ type: 'success', text: 'Changes saved successfully!' });
+      setMessage({ type: 'success', text: 'Changes saved successfully! Redirecting to home...' });
       await refreshContent();
+      
+      // Short delay for visual feedback before redirect
+      setTimeout(() => navigate('/'), 1000);
     } catch (err) {
       setMessage({ type: 'error', text: 'Error saving changes. Check authentication.' });
-    } finally {
       setSaving(false);
       setTimeout(() => setMessage(null), 3000);
     }
@@ -523,7 +573,7 @@ export function AdminPanelPage() {
   if (!formData) return <div className="p-8 text-center dark:text-white">Loading content editor...</div>;
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-950 p-4 md:p-8">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-950 p-4 pt-24 md:p-8 md:pt-28">
       <div className="max-w-6xl mx-auto space-y-6">
         
         {/* Header */}
@@ -548,6 +598,33 @@ export function AdminPanelPage() {
           </div>
         </div>
 
+        {/* Auto-Populate Upload Box */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-6 rounded-2xl shadow-sm border border-blue-100 dark:border-blue-800/50 mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 flex items-center gap-2">
+              <FileUp size={20} />
+              Auto-Populate from Resume
+            </h3>
+            <div className="text-blue-700 dark:text-blue-300 text-sm mt-1">
+              {uploading ? (
+                <span className="flex items-center gap-2 font-medium text-blue-800 dark:text-blue-200">
+                  <Loader2 className="animate-spin" size={16} /> 
+                  {progressText}
+                </span>
+              ) : (
+                "Upload your PDF resume to instantly map formatting into your dynamic sections using AI."
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+             <input type="file" id="resumeUpload" className="hidden" accept=".pdf" onChange={handleResumeUpload} disabled={uploading} />
+             <label htmlFor="resumeUpload" className={`px-4 py-3 sm:py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2 font-medium cursor-pointer hover:bg-blue-700 transition ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
+               {uploading ? <Loader2 className="animate-spin" size={18} /> : <Upload size={18} />}
+               {uploading ? 'Analyzing...' : 'Upload PDF'}
+             </label>
+          </div>
+        </div>
+
         {/* Tab Navigation */}
         <div className="flex gap-2 mb-2 overflow-x-auto pb-2 scrollbar-thin">
           {TABS.map(tab => (
@@ -567,8 +644,7 @@ export function AdminPanelPage() {
 
         {/* Tab Content Box */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-6 md:p-8 mb-8 min-h-[500px]">
-          {activeTab === 'hero' && <HeroEditor data={formData.hero} onChange={(d) => handleSectionUpdate('hero', d)} />}
-          {activeTab === 'about' && <AboutEditor data={formData.about} onChange={(d) => handleSectionUpdate('about', d)} />}
+          {activeTab === 'home' && <HomeEditor data={formData.home} onChange={(d) => handleSectionUpdate('home', d)} />}
           {activeTab === 'experience' && <ExperienceEditor data={formData.timeline} onChange={(d) => handleSectionUpdate('timeline', d)} />}
           {activeTab === 'projects' && <ProjectsEditor data={formData.projects} onChange={(d) => handleSectionUpdate('projects', d)} />}
           {activeTab === 'skills' && <SkillsEditor data={formData.skills} onChange={(d) => handleSectionUpdate('skills', d)} />}

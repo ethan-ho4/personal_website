@@ -39,7 +39,7 @@ export function Header() {
       <nav className="max-w-6xl mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           <button 
-            onClick={() => scrollToSection('hero')}
+            onClick={() => scrollToSection('home')}
             className="text-xl font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
           >
             Ethan Ho

@@ -1,18 +1,24 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 // Define the shape of our content based on content.json
-export interface HeroContent {
-  title: string;
-  subtitle: string;
-  description: string;
+export interface StatItem {
+  label: string;
+  value: string;
 }
 
-export interface AboutContent {
+export interface HighlightItem {
   title: string;
+  description: string;
+  icon: string;
+}
+
+export interface HomeContent {
+  title: string;
+  subtitle: string;
   description1: string;
   description2: string;
-  stats: { label: string; value: string }[];
-  highlights: { icon: string; title: string; description: string }[];
+  stats: StatItem[];
+  highlights: HighlightItem[];
 }
 
 export interface ProjectItem {
@@ -78,8 +84,7 @@ export interface SocialsContent {
 }
 
 export interface SiteContent {
-  hero: HeroContent;
-  about: AboutContent;
+  home: HomeContent;
   projects: ProjectsContent;
   skills: SkillsContent;
   contact: ContactContent;
