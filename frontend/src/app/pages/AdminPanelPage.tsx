@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { useContent, SiteContent, HomeContent, AboutContent, ProjectsContent, ProjectItem, SkillsContent, SkillCategory, ContactContent, TimelineContent, ExperienceItem, SocialsContent } from '../context/ContentContext';
-import { Plus, Trash2, Upload, Loader2, FileUp } from 'lucide-react';
+import { useContent, SiteContent, HomeContent, ProjectsContent, ProjectItem, SkillsContent, SkillCategory, ContactContent, TimelineContent, ExperienceItem, SocialsContent } from '../context/ContentContext';
+import { Plus, Trash2, Upload, Loader2, FileUp, Github } from 'lucide-react';
 
 const TABS = ['home', 'experience', 'projects', 'skills', 'contact', 'socials', 'json'] as const;
 type TabType = typeof TABS[number];
@@ -213,7 +213,40 @@ function ExperienceEditor({ data, onChange }: { data: TimelineContent, onChange:
               </div>
             </div>
             <FormTextarea label="Description" value={exp.description} onChange={(v) => updateExp('description', v)} rows={3} />
-            <FormInput label="Tailwind Gradient Classes (e.g. from-blue-500 to-cyan-500)" value={exp.color} onChange={(v) => updateExp('color', v)} />
+            {(() => {
+              const baseColors = ['slate', 'gray', 'zinc', 'neutral', 'stone', 'red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose'];
+              const shades = ['400', '500', '600'];
+              const colors = baseColors.flatMap(c => shades.map(s => `${c}-${s}`));
+              const currentFrom = (exp.color || 'from-blue-500 to-cyan-500').split(' ')[0]?.replace('from-', '') || 'blue-500';
+              const currentTo = (exp.color || 'from-blue-500 to-cyan-500').split(' ')[1]?.replace('to-', '') || 'cyan-500';
+              if (!colors.includes(currentFrom)) colors.push(currentFrom);
+              if (!colors.includes(currentTo)) colors.push(currentTo);
+              
+              return (
+                <div className="flex gap-4 mb-4 mt-2">
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Gradient Start Color</label>
+                    <select 
+                      className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white"
+                      value={currentFrom}
+                      onChange={(e) => updateExp('color', `from-${e.target.value} to-${currentTo}`)}
+                    >
+                      {colors.map(c => <option key={`from-${c}`} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Gradient End Color</label>
+                    <select 
+                      className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white"
+                      value={currentTo}
+                      onChange={(e) => updateExp('color', `from-${currentFrom} to-${e.target.value}`)}
+                    >
+                      {colors.map(c => <option key={`to-${c}`} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                </div>
+              );
+            })()}
             
             <div className="mt-4">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Achievements / Bullets</label>
@@ -244,9 +277,76 @@ function ExperienceEditor({ data, onChange }: { data: TimelineContent, onChange:
 
 function ProjectsEditor({ data, onChange }: { data: ProjectsContent, onChange: (d: ProjectsContent) => void }) {
   const update = (field: keyof ProjectsContent, value: any) => onChange({ ...data, [field]: value });
+  const [ghUrl, setGhUrl] = useState('');
+  const [loadingGh, setLoadingGh] = useState(false);
+
+  const handleFetchGithub = async () => {
+    if (!ghUrl) return alert("Please enter a valid GitHub Profile URL.");
+    setLoadingGh(true);
+    try {
+      const res = await fetch('/api/fetch-github-projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ githubUrl: ghUrl })
+      });
+      const resData = await res.json();
+      if (res.ok && resData.projects) {
+        // Update local state
+        const newProjectsData = { ...data, list: resData.projects };
+        onChange(newProjectsData);
+
+        // Auto-save immediately to backend
+        const token = localStorage.getItem('adminToken');
+        const currentContent = await fetch(`/api/content?t=${Date.now()}`).then(r => r.json());
+        const mergedContent = { ...currentContent, projects: newProjectsData };
+        const saveRes = await fetch('/api/content', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify(mergedContent)
+        });
+        if (!saveRes.ok) {
+          alert('Projects fetched but auto-save failed. Please click "Save All Changes" manually.');
+        }
+      } else {
+        alert(resData.error || "Failed to fetch from GitHub API.");
+      }
+    } catch (e) {
+      alert("Error connecting to the server.");
+    } finally {
+      setLoadingGh(false);
+    }
+  };
+
   return (
     <div>
       <h2 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">Projects Section</h2>
+      
+      <div className="mb-8 p-6 bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/50 rounded-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2" />
+        <h3 className="text-lg font-medium text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2 relative z-10">
+          <Github size={20} /> Auto-Fetch from GitHub
+        </h3>
+        <p className="text-sm text-blue-700 dark:text-blue-300 mb-5 relative z-10">
+          Instantly populate your portfolio with your top repositories. This will overwrite your current active project list below. OpenGraph preview images will be automatically generated!
+        </p>
+        <div className="flex gap-3 relative z-10">
+          <input 
+            className="flex-1 px-4 py-2.5 border border-blue-200 dark:border-blue-800 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none" 
+            placeholder="e.g. https://github.com/ethan-ho4" 
+            value={ghUrl} 
+            onChange={e => setGhUrl(e.target.value)} 
+          />
+          <button 
+            onClick={handleFetchGithub} 
+            disabled={loadingGh}
+            className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2 disabled:opacity-50 font-bold whitespace-nowrap min-w-[140px]"
+          >
+            {loadingGh ? <Loader2 className="animate-spin" size={18}/> : <Github size={18}/>}
+            {loadingGh ? "Fetching..." : "Fetch Repos"}
+          </button>
+        </div>
+      </div>
+
       <FormInput label="Title" value={data.title} onChange={(v) => update('title', v)} />
       <FormInput label="Subtitle" value={data.subtitle} onChange={(v) => update('subtitle', v)} />
       
@@ -529,17 +629,10 @@ export function AdminPanelPage() {
   const handleSave = async () => {
     if (!formData) return;
     
-    // Validate JSON before saving
-    try {
-      JSON.parse(jsonString);
-    } catch {
-      setMessage({ type: 'error', text: 'Cannot save: Invalid JSON format' });
-      return;
-    }
-
     setSaving(true);
     setMessage(null);
     const token = localStorage.getItem('adminToken');
+    const body = JSON.stringify(formData);
     
     try {
       const response = await fetch('/api/content', {
@@ -548,12 +641,13 @@ export function AdminPanelPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: jsonString
+        body
       });
       
       if (!response.ok) throw new Error('Failed to save');
       
-      setMessage({ type: 'success', text: 'Changes saved successfully! Redirecting to home...' });
+      setJsonString(JSON.stringify(formData, null, 2));
+      setMessage({ type: 'success', text: 'Changes saved successfully! Refreshing...' });
       await refreshContent();
       
       // Short delay for visual feedback before redirect

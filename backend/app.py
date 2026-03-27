@@ -4,6 +4,7 @@ import secrets
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 import smtplib
+import urllib.request
 from email.message import EmailMessage
 import PyPDF2
 from huggingface_hub import InferenceClient
@@ -208,6 +209,77 @@ def handle_contact():
     except Exception as e:
         print(f"Error sending email: {e}")
         return jsonify({"error": "Failed to send email. Ensure SMTP credentials are correct."}), 500
+
+@app.route('/api/fetch-github-projects', methods=['POST'])
+def fetch_github_projects():
+    data = request.json
+    if not data or not data.get('githubUrl'):
+        return jsonify({"error": "GitHub URL is required"}), 400
+        
+    url = data['githubUrl'].strip()
+    username = url.rstrip('/').split('/')[-1]
+    
+    if not username:
+        return jsonify({"error": "Invalid GitHub URL format"}), 400
+        
+    try:
+        api_url = f"https://api.github.com/users/{username}/repos?sort=pushed&per_page=100"
+        req = urllib.request.Request(api_url)
+        req.add_header('User-Agent', 'Ethan-Ho-Portfolio-Fetcher')
+        
+        gh_token = os.environ.get("GITHUB_TOKEN")
+        if gh_token:
+            req.add_header('Authorization', f'token {gh_token}')
+            
+        with urllib.request.urlopen(req) as response:
+            repos_data = json.loads(response.read().decode())
+            
+        projects_list = []
+        for repo in repos_data:
+            if repo.get("fork"): continue
+            
+            title = repo.get("name", "").replace("-", " ").replace("_", " ").title()
+            
+            tags = repo.get("topics", [])
+            if not tags and repo.get("language"):
+                tags = [repo.get("language")]
+                
+            desc = repo.get("description") or ""
+            try:
+                import re
+                readme_url = f"https://raw.githubusercontent.com/{username}/{repo.get('name')}/{repo.get('default_branch', 'main')}/README.md"
+                req_readme = urllib.request.Request(readme_url)
+                if gh_token:
+                    req_readme.add_header('Authorization', f'token {gh_token}')
+                with urllib.request.urlopen(req_readme, timeout=3) as r_resp:
+                    readme_text = r_resp.read().decode('utf-8')
+                    clean_text = re.sub(r'\[.*?\]\(.*?\)', '', readme_text) 
+                    clean_text = re.sub(r'<[^>]*>', '', clean_text) 
+                    clean_text = re.sub(r'[#*`_!|>\n]', ' ', clean_text) 
+                    clean_text = re.sub(r'\s+', ' ', clean_text).strip()
+                    if len(clean_text) > 20:
+                        desc = (clean_text[:220] + "...") if len(clean_text) > 220 else clean_text
+            except Exception:
+                pass
+                
+            projects_list.append({
+                "title": title,
+                "description": desc,
+                "image": f"https://opengraph.githubassets.com/1/{username}/{repo.get('name')}",
+                "tags": tags,
+                "github": repo.get("html_url", ""),
+                "live": repo.get("homepage") or ""
+            })
+            
+        return jsonify({"projects": projects_list}), 200
+        
+    except urllib.error.HTTPError as e:
+        error_info = e.read().decode()
+        print(f"GitHub API Error: {error_info}")
+        return jsonify({"error": "Failed to fetch from GitHub API. Please check the URL or wait due to rate limiting."}), e.code
+    except Exception as e:
+        print(f"Error fetching GitHub projects: {e}")
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)

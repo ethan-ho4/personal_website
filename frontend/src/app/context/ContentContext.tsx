@@ -109,7 +109,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
   const fetchContent = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/content');
+      const response = await fetch(`/api/content?t=${Date.now()}`);
       if (!response.ok) {
         throw new Error('Failed to fetch content');
       }

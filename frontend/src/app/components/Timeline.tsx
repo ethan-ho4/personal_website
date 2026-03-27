@@ -68,6 +68,8 @@ function ParticleSystem() {
 
 function ExperienceCard({ exp, index }: { exp: ExperienceItem, index: number }) {
   const [isFlipped, setIsFlipped] = useState(false);
+  const [showHint, setShowHint] = useState(false);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 3D Tilt Hook
   const x = useMotionValue(0);
@@ -83,17 +85,39 @@ function ExperienceCard({ exp, index }: { exp: ExperienceItem, index: number }) 
     y.set(e.clientY - (rect.top + rect.height / 2));
   }
 
+  function handleViewportEnter() {
+    setShowHint(true);
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    hoverTimer.current = setTimeout(() => setShowHint(false), 3000);
+  }
+
+  function handleMouseEnter() {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    hoverTimer.current = setTimeout(() => {
+      setShowHint(true);
+    }, 3000);
+  }
+
+  function handleMouseLeave() {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    setShowHint(false);
+    x.set(0);
+    y.set(0);
+  }
+
   return (
     <motion.div 
       initial={{ opacity: 0, scale: 0.8, y: 100 }}
       whileInView={{ opacity: 1, scale: 1, y: 0 }}
       viewport={{ once: true, margin: "-100px" }}
+      onViewportEnter={handleViewportEnter}
       transition={{ type: "spring", damping: 25, stiffness: 60, delay: 0.2 }}
       className="relative flex flex-col justify-center h-full w-[85vw] md:w-[65vw] max-w-6xl shrink-0 group perspective-[2000px] mx-10"
     >
       <motion.div
          onMouseMove={handleMouseMove}
-         onMouseLeave={() => { x.set(0); y.set(0); }}
+         onMouseEnter={handleMouseEnter}
+         onMouseLeave={handleMouseLeave}
          style={{ rotateX: springRotateX, rotateY: springRotateY, transformStyle: "preserve-3d" }}
          animate={{ y: [0, -15, 0] }}
          transition={{ duration: 6 + (index % 3), repeat: Infinity, ease: "easeInOut" }}
@@ -142,9 +166,14 @@ function ExperienceCard({ exp, index }: { exp: ExperienceItem, index: number }) 
                        </div>
                      </div>
                      
-                     <div className="absolute bottom-8 right-[50%] translate-x-[50%] text-blue-600 dark:text-blue-400 animate-bounce flex items-center gap-2 font-black text-sm md:text-base uppercase tracking-widest bg-white/40 dark:bg-white/10 px-6 py-3 rounded-full border border-white/60 dark:border-white/20 shadow-sm backdrop-blur-md">
-                       Click to Flip for Details
-                     </div>
+                     <motion.div 
+                       initial={{ opacity: 0, y: 10 }}
+                       animate={{ opacity: showHint ? 1 : 0, y: showHint ? 0 : 10 }}
+                       transition={{ duration: 0.3 }}
+                       className="absolute bottom-8 right-[50%] translate-x-[50%] text-blue-600 dark:text-blue-400 flex items-center gap-2 font-black text-sm md:text-base uppercase tracking-widest bg-white/40 dark:bg-white/10 px-6 py-3 rounded-full border border-white/60 dark:border-white/20 shadow-sm backdrop-blur-md pointer-events-none"
+                     >
+                       <span className="animate-bounce">Click to Flip for Details</span>
+                     </motion.div>
                   </div>
                 </div>
              </div>
