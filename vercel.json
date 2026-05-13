@@ -11,18 +11,14 @@
       "config": { "distDir": "dist" }
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "/backend/app.py"
+      "source": "/api/(.*)",
+      "destination": "/backend/app.py"
     },
     {
-      "src": "/(.*\\..+)",
-      "dest": "/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
