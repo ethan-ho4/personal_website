@@ -1,7 +1,15 @@
 import os
 import json
 import secrets
+import re
+from datetime import datetime, timedelta
+import jwt
+from markupsafe import escape
 from flask import Flask, request, jsonify
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from werkzeug.middleware.proxy_fix import ProxyFix
+from pymongo import MongoClient
 from dotenv import load_dotenv
 import smtplib
 import urllib.request
@@ -12,14 +20,62 @@ from huggingface_hub import InferenceClient
 load_dotenv()
 
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_host=1)
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5 MB limit
 
-# Very simple session token storage in memory for demonstration purposes.
-# In a real app, you would use a database or signed JWTs.
-SESSION_TOKENS = set()
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["100 per minute"],
+    storage_uri="memory://"
+)
+
+def get_jwt_secret():
+    secret = os.environ.get("JWT_SECRET")
+    if secret: return secret
+    secret_path = os.path.join(os.path.dirname(__file__), ".jwt_secret")
+    if os.path.exists(secret_path):
+        with open(secret_path, "r", encoding="utf-8") as f:
+            return f.read().strip()
+    secret = secrets.token_hex(32)
+    with open(secret_path, "w", encoding="utf-8") as f:
+        f.write(secret)
+    return secret
+
+JWT_SECRET = get_jwt_secret()
+
+def verify_jwt(auth_header):
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return False
+    token = auth_header.split(' ')[1]
+    try:
+        jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        return True
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+        return False
 
 CONTENT_FILE = os.path.join(os.path.dirname(__file__), "content.json")
 
+mongo_uri = os.environ.get("MONGO_URI")
+db_collection = None
+
+if mongo_uri:
+    try:
+        mongo_client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
+        db_collection = mongo_client.get_database("portfolio").get_collection("content")
+    except Exception as e:
+        print("Failed to initialize MongoDB:", e)
+
 def load_content():
+    if db_collection is not None:
+        try:
+            data = db_collection.find_one({"_id": "main_content"})
+            if data:
+                data.pop("_id", None)
+                return data
+        except Exception as e:
+            print("MongoDB Read Error:", e)
+            
     if not os.path.exists(CONTENT_FILE):
         return {}
     try:
@@ -29,25 +85,42 @@ def load_content():
         return {}
 
 def save_content(data):
+    if db_collection is not None:
+        try:
+            db_collection.update_one({"_id": "main_content"}, {"$set": data}, upsert=True)
+            return
+        except Exception as e:
+            print("MongoDB Write Error:", e)
+            
     with open(CONTENT_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=2)
 
 @app.route('/api/login', methods=['POST'])
+@limiter.limit("5 per 15 minute")
 def login():
     data = request.json
-    if not data:
+    if not data or not isinstance(data, dict):
         return jsonify({"error": "Invalid request"}), 400
     
     username = data.get("username")
     password = data.get("password")
+    
+    if not isinstance(username, str) or not isinstance(password, str):
+        return jsonify({"error": "Invalid credentials type"}), 400
+        
+    if len(username) > 100 or len(password) > 100:
+        return jsonify({"error": "Credentials too long"}), 400
     
     # Read from .env
     env_username = os.environ.get("ADMIN_USERNAME")
     env_password = os.environ.get("ADMIN_PASSWORD")
     
     if username == env_username and password == env_password:
-        token = secrets.token_hex(16)
-        SESSION_TOKENS.add(token)
+        payload = {
+            "sub": "admin",
+            "exp": datetime.utcnow() + timedelta(hours=24)
+        }
+        token = jwt.encode(payload, JWT_SECRET, algorithm="HS256")
         return jsonify({"token": token}), 200
     else:
         return jsonify({"error": "Invalid credentials"}), 401
@@ -55,10 +128,8 @@ def login():
 @app.route('/api/verify', methods=['GET'])
 def verify_token():
     auth_header = request.headers.get('Authorization')
-    if auth_header and auth_header.startswith('Bearer '):
-        token = auth_header.split(' ')[1]
-        if token in SESSION_TOKENS:
-            return jsonify({"valid": True}), 200
+    if verify_jwt(auth_header):
+        return jsonify({"valid": True}), 200
     return jsonify({"valid": False}), 401
 
 @app.route('/api/content', methods=['GET'])
@@ -68,11 +139,7 @@ def get_content():
 @app.route('/api/content', methods=['POST'])
 def update_content():
     auth_header = request.headers.get('Authorization')
-    if not auth_header or not auth_header.startswith('Bearer '):
-        return jsonify({"error": "Unauthorized"}), 401
-    
-    token = auth_header.split(' ')[1]
-    if token not in SESSION_TOKENS:
+    if not verify_jwt(auth_header):
         return jsonify({"error": "Unauthorized"}), 401
 
     data = request.json
@@ -85,11 +152,7 @@ def update_content():
 @app.route('/api/upload-resume', methods=['POST'])
 def upload_resume():
     auth_header = request.headers.get('Authorization')
-    if not auth_header or not auth_header.startswith('Bearer '):
-        return jsonify({"error": "Unauthorized"}), 401
-    
-    token = auth_header.split(' ')[1]
-    if token not in SESSION_TOKENS:
+    if not verify_jwt(auth_header):
         return jsonify({"error": "Unauthorized"}), 401
     
     if 'file' not in request.files:
@@ -98,6 +161,9 @@ def upload_resume():
     file = request.files['file']
     if file.filename == '':
         return jsonify({"error": "No selected file"}), 400
+        
+    if not file.filename.lower().endswith('.pdf') or file.mimetype != 'application/pdf':
+        return jsonify({"error": "Only PDF files are accepted"}), 400
         
     if file:
         try:
@@ -117,15 +183,14 @@ def upload_resume():
         try:
             client = InferenceClient(model=hf_model, token=hf_api_key)
             prompt = f"""You are a JSON formatter.
-Given the following resume text, return a JSON object containing the updated fields for 'contact', 'about', 'home', 'skills', and 'timeline'. 
+Given the following resume text, return a JSON object containing the updated fields for 'contact', 'home', 'skills', and 'timeline'. 
 IMPORTANT: You MUST rewrite any descriptions, professional experiences, and achievements into the FIRST-PERSON perspective using 'I', 'me', and 'my', pretending you are the owner of the resume talking on their personal portfolio website.
 The data structure MUST EXACTLY match the following template. Reply ONLY with the raw valid JSON, no markdown formatting blocks.
 
 Template:
 {{
   "contact": {{ "email": "", "location": "", "phone": "", "subtitle": "Have a project in mind? I'd love to hear about it. Send me a message and let's create something amazing together.", "title": "Let's Work Together" }},
-  "about": {{ "description1": "", "description2": "", "highlights": [ {{"description": "", "icon": "", "title": ""}} ], "stats": [ {{"label": "", "value": ""}} ], "title": "Who I Am" }},
-  "home": {{ "description": "", "subtitle": "", "title": "" }},
+  "home": {{ "title": "Who I Am", "subtitle": "Full Stack Developer", "description1": "" }},
   "skills": {{ "categories": [ {{"category": "Frontend", "skills": [ {{"level": 90, "name": ""}} ] }} ], "subtitle": "A diverse skill set covering the full spectrum of modern web development", "title": "What I Do Best" }},
   "timeline": {{ "experiences": [ {{"achievements": [""], "color": "from-blue-500 to-cyan-500", "company": "", "description": "", "endMonth": "December", "endYear": "2024", "isCurrent": false, "period": "January 2022 - December 2024", "position": "", "startMonth": "January", "startYear": "2022", "year": 2022}} ], "subtitle": "Building the Future", "title": "Work Experience" }}
 }}
@@ -152,7 +217,7 @@ Resume text:
             new_data = json.loads(generated_text)
             
             current_content = load_content()
-            for k in ["contact", "about", "home", "skills", "timeline"]:
+            for k in ["contact", "home", "skills", "timeline"]:
                 if k in new_data:
                     current_content[k] = new_data[k]
                     
@@ -167,12 +232,25 @@ Resume text:
 @app.route('/api/contact', methods=['POST'])
 def handle_contact():
     data = request.json
-    if not data or not data.get('name') or not data.get('email') or not data.get('message'):
+    if not data or not isinstance(data, dict) or not data.get('name') or not data.get('email') or not data.get('message'):
         return jsonify({"error": "Missing required fields"}), 400
         
     name = data['name']
     sender_email = data['email']
     message = data['message']
+    
+    if not isinstance(name, str) or not isinstance(sender_email, str) or not isinstance(message, str):
+        return jsonify({"error": "Invalid types"}), 400
+        
+    if len(name) > 100 or len(sender_email) > 254 or len(message) > 5000:
+        return jsonify({"error": "Payload items too large"}), 400
+        
+    if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', sender_email):
+        return jsonify({"error": "Invalid email format"}), 400
+        
+    # Sanitize HTML tags out of message and name
+    name = str(escape(name))
+    message = str(escape(message))
     
     # Try to get SMTP settings
     smtp_email = os.environ.get("SMTP_EMAIL")
@@ -213,15 +291,20 @@ def handle_contact():
 @app.route('/api/fetch-github-projects', methods=['POST'])
 def fetch_github_projects():
     data = request.json
-    if not data or not data.get('githubUrl'):
+    if not data or not isinstance(data, dict) or not data.get('githubUrl'):
         return jsonify({"error": "GitHub URL is required"}), 400
         
     url = data['githubUrl'].strip()
-    username = url.rstrip('/').split('/')[-1]
     
-    if not username:
+    if not isinstance(url, str) or len(url) > 200:
+        return jsonify({"error": "Invalid GitHub URL size"}), 400
+        
+    match = re.match(r'^https://github\.com/([a-zA-Z0-9-]+)/?$', url)
+    if not match:
         return jsonify({"error": "Invalid GitHub URL format"}), 400
         
+    username = match.group(1)
+    
     try:
         api_url = f"https://api.github.com/users/{username}/repos?sort=pushed&per_page=100"
         req = urllib.request.Request(api_url)

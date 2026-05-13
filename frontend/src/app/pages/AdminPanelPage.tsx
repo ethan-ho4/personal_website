@@ -63,41 +63,7 @@ function HomeEditor({ data, onChange }: { data: HomeContent, onChange: (d: HomeC
       <h2 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">Home & About Section</h2>
       <FormInput label="Hero Title" value={data.title} onChange={(v) => update('title', v)} />
       <FormInput label="Hero Subtitle" value={data.subtitle} onChange={(v) => update('subtitle', v)} />
-      <FormTextarea label="Introduction Paragraph 1" value={data.description1 || ''} onChange={(v) => update('description1', v)} rows={3} />
-      <FormTextarea label="Introduction Paragraph 2" value={data.description2 || ''} onChange={(v) => update('description2', v)} rows={3} />
-      
-      <div className="mt-8 mb-4 flex justify-between items-center">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">Quick Stats</h3>
-        <button onClick={() => update('stats', [...(data.stats||[]), {label: 'New Stat', value: '0'}])} className="text-blue-600 flex items-center gap-1 text-sm bg-blue-50 dark:bg-blue-900/30 py-1 px-3 rounded-md hover:bg-blue-100 transition-colors">
-          <Plus size={16}/> Add Stat
-        </button>
-      </div>
-      {(data.stats||[]).map((stat, idx) => (
-        <div key={idx} className="flex gap-4 items-end mb-4 border border-gray-200 dark:border-gray-700 p-4 rounded-lg relative bg-gray-50/50 dark:bg-gray-800/50">
-          <button onClick={() => { const ns = [...data.stats]; ns.splice(idx, 1); update('stats', ns); }} className="absolute top-2 right-2 text-red-500 hover:text-red-700"><Trash2 size={16}/></button>
-          <div className="flex-1">
-            <FormInput label="Label (e.g. Years Exp)" value={stat.label} onChange={(v) => { const ns = [...data.stats]; ns[idx].label = v; update('stats', ns); }} />
-          </div>
-          <div className="flex-1">
-            <FormInput label="Value (e.g. 5+)" value={stat.value} onChange={(v) => { const ns = [...data.stats]; ns[idx].value = v; update('stats', ns); }} />
-          </div>
-        </div>
-      ))}
-
-      <div className="mt-8 mb-4 flex justify-between items-center">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">Highlights</h3>
-        <button onClick={() => update('highlights', [...(data.highlights||[]), {icon: 'Code', title: 'New Highlight', description: ''}])} className="text-blue-600 flex items-center gap-1 text-sm bg-blue-50 dark:bg-blue-900/30 py-1 px-3 rounded-md hover:bg-blue-100 transition-colors">
-          <Plus size={16}/> Add Highlight
-        </button>
-      </div>
-      {(data.highlights||[]).map((hlt, idx) => (
-        <div key={idx} className="mb-4 border border-gray-200 dark:border-gray-700 p-4 rounded-lg relative bg-gray-50/50 dark:bg-gray-800/50">
-          <button onClick={() => { const nh = [...data.highlights]; nh.splice(idx, 1); update('highlights', nh); }} className="absolute top-4 right-4 text-red-500 hover:text-red-700"><Trash2 size={16}/></button>
-          <FormInput label="Icon Name (Lucide React)" value={hlt.icon} onChange={(v) => { const nh = [...data.highlights]; nh[idx].icon = v; update('highlights', nh); }} />
-          <FormInput label="Title" value={hlt.title} onChange={(v) => { const nh = [...data.highlights]; nh[idx].title = v; update('highlights', nh); }} />
-          <FormTextarea label="Description" value={hlt.description} onChange={(v) => { const nh = [...data.highlights]; nh[idx].description = v; update('highlights', nh); }} rows={2} />
-        </div>
-      ))}
+      <FormTextarea label="Introduction Paragraph" value={data.description1 || ''} onChange={(v) => update('description1', v)} rows={3} />
     </div>
   );
 }

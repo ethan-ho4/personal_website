@@ -32,7 +32,7 @@ export function HomePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.6 }}
             >
-              Ethan Ho
+              {content?.home.title}
             </motion.h1>
             <motion.h2 
               className="text-2xl md:text-4xl text-gray-600 dark:text-gray-300"
@@ -40,7 +40,7 @@ export function HomePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.6 }}
             >
-              Full Stack Developer & Designer
+              {content?.home.subtitle}
             </motion.h2>
           </div>
 
@@ -50,8 +50,7 @@ export function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.6 }}
           >
-            I craft beautiful, functional digital experiences that make a difference. 
-            Passionate about clean code, intuitive design, and solving complex problems.
+            {content?.home.description1}
           </motion.p>
 
           <motion.div 

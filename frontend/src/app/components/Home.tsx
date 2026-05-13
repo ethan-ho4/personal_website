@@ -48,7 +48,7 @@ export function Home() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
-              {homeData.title || "Ethan Ho"}
+              {homeData.title}
             </motion.h1>
             <motion.h2 
               className="text-2xl md:text-3xl text-gray-600 dark:text-gray-300 font-medium"
@@ -56,7 +56,7 @@ export function Home() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
             >
-              {homeData.subtitle || "Full Stack Developer"}
+              {homeData.subtitle}
             </motion.h2>
           </div>
 
@@ -121,35 +121,12 @@ export function Home() {
 
       {/* 2. Unified About Information */}
       <div className="max-w-7xl mx-auto mt-32 relative z-10">
-        {/* Quick Stats Row */}
-        {homeData.stats && homeData.stats.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-24">
-            {homeData.stats.map((stat: any, idx: number) => (
-              <motion.div 
-                key={idx}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ delay: idx * 0.1, duration: 0.5 }}
-                className="bg-white dark:bg-gray-900/50 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 text-center hover:-translate-y-2 transition-transform duration-300"
-              >
-                <div className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-blue-600 to-cyan-400 mb-2">
-                  {stat.value}
-                </div>
-                <div className="text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider text-sm">
-                  {stat.label}
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
-
-        <div className="grid lg:grid-cols-12 gap-16">
+        <div className="w-full">
           {/* Paragraphs */}
           <motion.div 
-            className="lg:col-span-7 space-y-8 text-lg md:text-xl text-gray-700 dark:text-gray-300 leading-relaxed font-medium"
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            className="space-y-8 text-lg md:text-xl text-gray-700 dark:text-gray-300 leading-relaxed font-medium"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
@@ -159,38 +136,6 @@ export function Home() {
                 <span className="relative z-10">{homeData.description1}</span>
               </p>
             )}
-            {homeData.description2 && (
-              <p className="p-6 text-gray-600 dark:text-gray-400">
-                {homeData.description2}
-              </p>
-            )}
-          </motion.div>
-
-          {/* Highlights */}
-          <motion.div 
-            className="lg:col-span-5 space-y-6"
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            {homeData.highlights && homeData.highlights.map((hlt: any, idx: number) => (
-              <motion.div 
-                key={idx}
-                whileHover={{ x: 10, scale: 1.02 }}
-                className="flex items-start gap-5 p-6 bg-white dark:bg-white/5 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 group transition-all"
-              >
-                <div className="w-14 h-14 shrink-0 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center shadow-inner group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                  <IconRenderer iconName={hlt.icon} size={28} />
-                </div>
-                <div>
-                  <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{hlt.title}</h4>
-                  <p className="text-gray-600 dark:text-gray-400 leading-snug">
-                    {hlt.description}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
           </motion.div>
         </div>
       </div>

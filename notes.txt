@@ -1,5 +1,0 @@
-npm install -g pnpm
-pnpm install
-
-npm run dev
-python app.py
