@@ -31,16 +31,19 @@ limiter = Limiter(
 )
 
 def get_jwt_secret():
+    # Primary: read from environment variable (required in production / Vercel)
     secret = os.environ.get("JWT_SECRET")
-    if secret: return secret
+    if secret:
+        return secret
+    # Local dev fallback: read existing .jwt_secret file (never write in serverless)
     secret_path = os.path.join(os.path.dirname(__file__), ".jwt_secret")
     if os.path.exists(secret_path):
         with open(secret_path, "r", encoding="utf-8") as f:
             return f.read().strip()
-    secret = secrets.token_hex(32)
-    with open(secret_path, "w", encoding="utf-8") as f:
-        f.write(secret)
-    return secret
+    # Last resort: ephemeral secret — tokens won't survive restarts.
+    # Set JWT_SECRET env var to fix this.
+    print("WARNING: JWT_SECRET not set. Using an ephemeral secret — tokens will invalidate on restart.")
+    return secrets.token_hex(32)
 
 JWT_SECRET = get_jwt_secret()
 
@@ -91,9 +94,13 @@ def save_content(data):
             return
         except Exception as e:
             print("MongoDB Write Error:", e)
-            
-    with open(CONTENT_FILE, 'w', encoding='utf-8') as f:
-        json.dump(data, f, indent=2)
+
+    # File fallback — only works in local dev (Vercel filesystem is read-only)
+    try:
+        with open(CONTENT_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2)
+    except OSError as e:
+        print(f"WARNING: Could not write content.json (read-only filesystem?): {e}")
 
 @app.route('/api/login', methods=['POST'])
 @limiter.limit("5 per 15 minute")
