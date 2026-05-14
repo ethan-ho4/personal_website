@@ -8,14 +8,12 @@
     {
       "src": "frontend/package.json",
       "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist",
-        "buildCommand": "pnpm install --frozen-lockfile && pnpm build"
-      }
+      "config": { "distDir": "dist" }
     }
   ],
-  "rewrites": [
-    { "source": "/api/:path*", "destination": "/backend/app.py" },
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/backend/app.py" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
